@@ -1,0 +1,338 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ product.name }} - Live Bakery{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Breadcrumb -->
+    <nav class="mb-6">
+        <ol class="flex items-center space-x-2 text-sm">
+            <li><a href="{% url 'core:home' %}" class="text-amber-600 hover:text-amber-700">Home</a></li>
+            <li><span class="text-gray-400">/</span></li>
+            <li><a href="{% url 'products:product_list' %}" class="text-amber-600 hover:text-amber-700">Products</a></li>
+            {% if product.category %}
+            <li><span class="text-gray-400">/</span></li>
+            <li><a href="{% url 'products:product_list_by_category' category_slug=product.category.slug %}" class="text-amber-600 hover:text-amber-700">{{ product.category.name }}</a></li>
+            {% endif %}
+            <li><span class="text-gray-400">/</span></li>
+            <li class="text-gray-600">{{ product.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden border lg:border-t-0 lg:border-l border-gray-200">
+        <div class="flex flex-col lg:flex-row min-h-[500px]">
+            <!-- LEFT HALF: Product Image (Larger to match right half) -->
+            <div class="lg:w-1/2 p-8 flex items-center justify-center">
+                <div class="w-full h-full flex items-center justify-center">
+                    <div class="w-full max-w-lg">
+                        <div class="rounded-lg overflow-hidden bg-white h-full flex items-center justify-center">
+                            {% if product.images.exists %}
+                                {% with product.images.first as main_image %}
+                                <img id="main-image" 
+                                     src="{{ main_image.image.url }}" 
+                                     alt="{{ main_image.alt_text|default:product.name }}" 
+                                     class="w-full max-h-[400px] object-contain p-8">
+                                {% endwith %}
+                            {% else %}
+                                <div class="h-full w-full flex items-center justify-center bg-linear-to-br from-amber-50 to-orange-50 min-h-[350px]">
+                                    <div class="text-center">
+                                        <div class="w-24 h-24 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            {% if product.is_cake %}
+                                            <svg class="w-12 h-12 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0v-3a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0v3a2.704 2.704 0 01-1.5-.454z"/>
+                                            </svg>
+                                            {% else %}
+                                            <svg class="w-12 h-12 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/>
+                                            </svg>
+                                            {% endif %}
+                                        </div>
+                                        <p class="text-amber-600 font-medium text-xl">{{ product.name }}</p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT HALF: Product Description (Covers entire half) -->
+            <div class="lg:w-1/2 p-8 border-l lg:border-t-0 lg:border-l border-gray-200 ">
+                <!-- Full Height Content Area -->
+                <div class="h-full flex flex-col">
+                    <!-- Product Header -->
+                    <div class="mb-6">
+                        <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ product.name }}</h1>
+                        
+                        <div class="flex items-center mb-4">
+                            <span class="text-amber-600 font-medium">{{ product.category.name|default:"Bakery Item" }}</span>
+                            <span class="text-gray-400 mx-3">•</span>
+                            <span class="text-2xl font-bold text-amber-600">Rs. {{ product.base_price }}</span>
+                        </div>
+                        
+                        <!-- Product Status Badges -->
+                        <div class="flex flex-wrap gap-2 mb-6">
+                            {% if product.is_featured %}
+                            <span class="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded">
+                                Featured
+                            </span>
+                            {% endif %}
+                            
+                            {% if product.is_cake %}
+                            <span class="bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded">
+                                🎂 Custom Cake
+                            </span>
+                            {% endif %}
+                            
+                            {% if not product.in_stock %}
+                            <span class="bg-red-500 text-white text-sm font-bold px-3 py-1 rounded">
+                                Out of Stock
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Detailed Description Sections -->
+                    <div class="space-y-6 grow overflow-y-auto pr-2">
+                        <!-- Overview -->
+                        {% if product.detailed_description.overview %}
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-3">Overview</h3>
+                            <div class="text-gray-600">
+                                {{ product.detailed_description.overview|linebreaks }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Ingredients -->
+                        {% if product.detailed_description.ingredients %}
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-3">Ingredients</h3>
+                            <div class="text-gray-600 bg-gray-50 p-4 rounded-lg">
+                                {{ product.detailed_description.ingredients|linebreaks }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Allergy Information -->
+                        {% if product.detailed_description.allergy_info %}
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-3">Allergy Information</h3>
+                            <div class="text-gray-600 bg-red-50 p-4 rounded-lg border border-red-100">
+                                {{ product.detailed_description.allergy_info|linebreaks }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Serves -->
+                        {% if product.serves %}
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-3">Serves</h3>
+                            <div class="text-gray-600">
+                                <div class="flex items-center bg-green-50 p-4 rounded-lg">
+                                    <svg class="w-6 h-6 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-1.205a21.377 21.377 0 00-2.631 5.737"/>
+                                    </svg>
+                                    <span class="font-medium">Serves {{ product.serves }} people</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- ADD TO CART BUTTON (Fixed at bottom) -->
+                    <div class="mt-8 pt-6 border-t border-gray-200">
+                        {% if user.is_authenticated %}
+                            {% if product.in_stock %}
+                                {% if product.is_cake %}
+                                <!-- Custom Cake Order Button -->
+                                <div class="text-center">
+                                    <a href="{% url 'orders:customize_cake' product.id %}" 
+                                       class="inline-block w-full bg-linear-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-bold py-3 px-6 rounded-lg transition duration-200 shadow hover:shadow-lg">
+                                        🎂 Customize & Order Cake
+                                    </a>
+                                </div>
+                                {% else %}
+                                <!-- Regular Product Add to Cart -->
+                                <div>
+                                    <form method="post" action="{% url 'cart:cart_add' product.id %}" class="space-y-4">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="override" value="false">
+                                        <div class="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
+                                            <div>
+                                                <span class="text-gray-700 font-medium">Quantity:</span>
+                                                <div class="flex items-center mt-2">
+                                                    <button type="button" class="decrease-quantity w-10 h-10 bg-white border border-gray-300 rounded-l-lg flex items-center justify-center text-gray-600 hover:text-amber-600 hover:bg-gray-100">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+                                                        </svg>
+                                                    </button>
+                                                    <input type="number" 
+                                                           id="quantity" 
+                                                           name="quantity" 
+                                                           value="1" 
+                                                           min="1" 
+                                                           max="10"
+                                                           class="w-16 h-10 text-center border-y border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                                                    <button type="button" class="increase-quantity w-10 h-10 bg-white border border-gray-300 rounded-r-lg flex items-center justify-center text-gray-600 hover:text-amber-600 hover:bg-gray-100">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="text-right">
+                                                <span class="text-gray-500 text-sm">Total:</span>
+                                                <div class="text-2xl font-bold text-amber-600">Rs. <span id="total-price">{{ product.base_price }}</span></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Add to Cart Button -->
+                                        <button type="submit" 
+                                                class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-lg transition duration-200 shadow-md hover:shadow-lg">
+                                            🛒 Add to Cart
+                                        </button>
+                                    </form>
+                                </div>
+                                {% endif %}
+                            {% else %}
+                            <!-- Out of Stock Message -->
+                            <div class="text-center p-4 bg-red-50 rounded-lg border border-red-100">
+                                <svg class="w-12 h-12 text-red-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <p class="text-red-600 font-medium">Currently Out of Stock</p>
+                                <p class="text-gray-600 text-sm mt-1">We'll have more available soon!</p>
+                            </div>
+                            {% endif %}
+                        {% else %}
+                        <!-- Login Required Message -->
+                        <div class="text-center p-4 bg-linear-to-r from-amber-50 to-orange-50 rounded-lg border border-amber-200">
+                            <svg class="w-12 h-12 text-amber-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                            </svg>
+                            <p class="text-amber-700 font-medium">Login to Order</p>
+                            <p class="text-gray-600 text-sm mb-3">Please login to add items to your cart</p>
+                            <a href="{% url 'users:login' %}?next={{ request.path }}" 
+                               class="inline-block bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-6 rounded-lg transition duration-200 shadow hover:shadow-md">
+                                Login Now
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Related Products -->
+    {% if related_products %}
+    <div class="mt-12">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">You May Also Like</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {% for related_product in related_products %}
+                {% include 'products/product_card.html' with product=related_product %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Quantity controls and price calculation
+    const quantityInput = document.getElementById('quantity');
+    const totalPriceElement = document.getElementById('total-price');
+    
+    if (quantityInput && totalPriceElement) {
+        const basePrice = parseFloat('{{ product.base_price|escapejs }}');
+        
+        function updateTotalPrice() {
+            const quantity = parseInt(quantityInput.value) || 1;
+            const total = basePrice * quantity;
+            totalPriceElement.textContent = total.toFixed(2);
+        }
+        
+        // Increase quantity
+        const increaseBtn = document.querySelector('.increase-quantity');
+        if (increaseBtn) {
+            increaseBtn.addEventListener('click', function() {
+                let currentValue = parseInt(quantityInput.value) || 1;
+                if (currentValue < 10) {
+                    quantityInput.value = currentValue + 1;
+                    updateTotalPrice();
+                }
+            });
+        }
+
+        // Decrease quantity
+        const decreaseBtn = document.querySelector('.decrease-quantity');
+        if (decreaseBtn) {
+            decreaseBtn.addEventListener('click', function() {
+                let currentValue = parseInt(quantityInput.value) || 1;
+                if (currentValue > 1) {
+                    quantityInput.value = currentValue - 1;
+                    updateTotalPrice();
+                }
+            });
+        }
+        
+        // Update on direct input
+        quantityInput.addEventListener('input', updateTotalPrice);
+        
+        // Initial update
+        updateTotalPrice();
+    }
+});
+</script>
+
+<style>
+/* Ensure both halves have equal height */
+.min-h-\[500px\] {
+    min-height: 500px;
+}
+
+/* Make both halves take equal space */
+.lg\:w-1\/2 {
+    width: 50%;
+}
+
+/* Scrollbar styling */
+.pr-2::-webkit-scrollbar {
+    width: 4px;
+}
+
+.pr-2::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.pr-2::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 10px;
+}
+
+.pr-2::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* Force button colors */
+.bg-amber-500 {
+    background-color: #f59e0b !important;
+}
+
+.bg-amber-500:hover {
+    background-color: #d97706 !important;
+}
+
+.bg-purple-600 {
+    background-color: #7c3aed !important;
+}
+
+.bg-purple-600:hover {
+    background-color: #6d28d9 !important;
+}
+</style>
+{% endblock %}

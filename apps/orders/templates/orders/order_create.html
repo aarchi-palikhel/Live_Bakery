@@ -1,0 +1,588 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load orders_filters %}  {# Load the custom filter #}
+
+{% block title %}Checkout - Live Bakery{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto my-8 px-4">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-[#8f3232] mb-2">Checkout</h1>
+        <p class="text-gray-600">Complete your order</p>
+    </div>
+
+    {% if messages %}
+    <div class="mb-6">
+        {% for message in messages %}
+        <div class="p-4 mb-2 rounded-lg {% if message.tags == 'error' %}bg-red-50 text-red-700{% elif message.tags == 'success' %}bg-green-50 text-green-700{% elif message.tags == 'warning' %}bg-yellow-50 text-yellow-700{% else %}bg-blue-50 text-blue-700{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="grid lg:grid-cols-3 gap-8">
+        <!-- Left: Order Form & Cake Customization -->
+        <div class="lg:col-span-2">
+            <form method="post" enctype="multipart/form-data" id="order-form">
+                {% csrf_token %}
+                
+                <!-- Delivery Information -->
+                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-[#8f3232]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                        Delivery Information
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Delivery Address *
+                            </label>
+                            {{ order_form.delivery_address }}
+                            {% if order_form.delivery_address.errors %}
+                            <p class="text-red-500 text-sm mt-1">{{ order_form.delivery_address.errors.0 }}</p>
+                            {% endif %}
+                            <p class="text-sm text-gray-500 mt-1">Enter full address including area</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Phone Number *
+                            </label>
+                            {{ order_form.phone_number }}
+                            {% if order_form.phone_number.errors %}
+                            <p class="text-red-500 text-sm mt-1">{{ order_form.phone_number.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Special Instructions (Optional)
+                            </label>
+                            {{ order_form.special_instructions }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cake Customization Section -->
+                {% if has_cakes %}
+                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-[#8f3232]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0v-3a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0v3a2.704 2.704 0 01-1.5-.454z"/>
+                        </svg>
+                        Cake Customization
+                    </h2>
+                    
+                    <div class="space-y-6">
+                        {% for cake_item in cake_items %}
+                        {% with form=customization_forms|get_form_by_index:forloop.counter0 %}
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <div class="flex items-center mb-4">
+                                <div class="w-16 h-16 rounded-lg overflow-hidden mr-4">
+                                    {% if cake_item.product.images.exists %}
+                                    <img src="{{ cake_item.product.images.first.image.url }}" 
+                                         alt="{{ cake_item.product.name }}"
+                                         class="w-full h-full object-cover">
+                                    {% else %}
+                                    <div class="w-full h-full bg-gray-100 flex items-center justify-center">
+                                        <span class="text-2xl text-gray-400">🎂</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-800 text-lg">{{ cake_item.product.name }}</h3>
+                                    <p class="text-sm text-gray-600">Quantity: {{ cake_item.quantity }}</p>
+                                    <p class="text-sm text-[#8f3232] font-medium">Rs. {{ cake_item.total_price }}</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Cake Customization Fields -->
+                            <div class="space-y-4">
+                                <!-- Weight Selection -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Cake Weight *</label>
+                                    <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                        {% for value, label in form.weight.field.choices %}
+                                        <label class="relative">
+                                            <input type="radio" name="{{ form.prefix }}-weight" value="{{ value }}" 
+                                                   class="peer sr-only" {% if form.weight.value == value or forloop.first and not form.weight.value %}checked{% endif %}>
+                                            <div class="border-2 border-gray-200 rounded-lg p-3 text-center cursor-pointer hover:border-purple-400 peer-checked:border-purple-500 peer-checked:bg-purple-50">
+                                                <div class="font-medium text-gray-800">{{ label }}</div>
+                                            </div>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                    {% if form.weight.errors %}
+                                    <p class="text-red-500 text-sm mt-1">{{ form.weight.errors.0 }}</p>
+                                    {% endif %}
+                                    
+                                    <!-- Custom Weight Input (Hidden by default) -->
+                                    <div id="custom-weight-{{ forloop.counter0 }}" class="mt-2 hidden">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                                            Custom Weight (in pounds)
+                                        </label>
+                                        {{ form.custom_weight }}
+                                        {% if form.custom_weight.errors %}
+                                        <p class="text-red-500 text-sm mt-1">{{ form.custom_weight.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Flavor Selection -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Cake Flavor *</label>
+                                    {{ form.flavor }}
+                                    {% if form.flavor.errors %}
+                                    <p class="text-red-500 text-sm mt-1">{{ form.flavor.errors.0 }}</p>
+                                    {% endif %}
+                                    
+                                    <!-- Custom Flavor Input (Hidden by default) -->
+                                    <div id="custom-flavor-{{ forloop.counter0 }}" class="mt-2 hidden">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                                            Custom Flavor Details
+                                        </label>
+                                        {{ form.custom_flavor }}
+                                        {% if form.custom_flavor.errors %}
+                                        <p class="text-red-500 text-sm mt-1">{{ form.custom_flavor.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Tiers Selection -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Number of Tiers *</label>
+                                    <div class="flex space-x-4">
+                                        {% for value, label in form.tiers.field.choices %}
+                                        <label class="flex items-center">
+                                            <input type="radio" name="{{ form.prefix }}-tiers" value="{{ value }}" 
+                                                   class="mr-2" {% if form.tiers.value == value or forloop.first and not form.tiers.value %}checked{% endif %}>
+                                            <span>{{ label }}</span>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                    {% if form.tiers.errors %}
+                                    <p class="text-red-500 text-sm mt-1">{{ form.tiers.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Message on Cake -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Message on Cake (Optional)</label>
+                                    {{ form.message_on_cake }}
+                                    <p class="text-xs text-gray-500 mt-1">Max 50 characters</p>
+                                </div>
+                                
+                                <!-- Delivery Date -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Delivery Date *</label>
+                                    {{ form.delivery_date }}
+                                    {% if form.delivery_date.errors %}
+                                    <p class="text-red-500 text-sm mt-1">{{ form.delivery_date.errors.0 }}</p>
+                                    {% endif %}
+                                    <p class="text-xs text-gray-500 mt-1">Please allow at least 2 days for preparation</p>
+                                </div>
+                                
+                                <!-- Reference Image -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Reference Image (Optional)</label>
+                                    {{ form.reference_image }}
+                                    <div class="mt-2">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                                            Reference Title
+                                        </label>
+                                        {{ form.reference_title }}
+                                    </div>
+                                    <div class="mt-2">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                                            Reference Description
+                                        </label>
+                                        {{ form.reference_description }}
+                                    </div>
+                                </div>
+                                
+                                <!-- Special Instructions -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Special Instructions (Optional)</label>
+                                    {{ form.special_instructions }}
+                                </div>
+                                
+                                <!-- Quantity -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Quantity *</label>
+                                    {{ form.quantity }}
+                                    {% if form.quantity.errors %}
+                                    <p class="text-red-500 text-sm mt-1">{{ form.quantity.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endwith %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Payment Method -->
+<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+        <svg class="w-5 h-5 mr-2 text-[#8f3232]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+        </svg>
+        Payment Method
+    </h2>
+    
+    <div class="space-y-4">
+        <!-- Render Django form radio buttons -->
+        <div class="payment-options">
+            {{ order_form.payment_method }}
+        </div>
+        
+                    <!-- eSewa Payment Button (Hidden by default) -->
+                    <div id="esewa-payment-section" class="hidden mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                        <div class="flex items-center justify-between mb-3">
+                            <div>
+                                <h4 class="font-semibold text-green-800">Complete eSewa Payment</h4>
+                                <p class="text-sm text-green-600">Total: Rs. <span id="esewa-total">{{ total }}</span></p>
+                            </div>
+                            <button type="submit" id="esewa-pay-button" 
+                                    class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition">
+                                Pay Now with eSewa
+                            </button>
+                        </div>
+                        <p class="text-sm text-gray-600">You will be redirected to eSewa payment portal</p>
+                    </div>
+                </div>
+            </div>
+                
+                <!-- Submit Buttons -->
+                <div class="sticky bottom-0 bg-white p-4 border-t border-gray-200 shadow-lg">
+                    <div class="max-w-6xl mx-auto">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                            <div>
+                                <a href="{% url 'cart:cart_detail' %}" class="text-[#8f3232] hover:text-[#7a2a2a] font-medium flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                                    </svg>
+                                    Back to Cart
+                                </a>
+                            </div>
+                            
+                            <div class="flex space-x-3">
+                                <!-- COD Submit Button -->
+                                <button type="submit" id="cod-submit-btn" 
+                                        class="bg-[#8f3232] hover:bg-[#7a2a2a] text-white px-8 py-3 rounded-lg font-bold transition shadow-md hover:shadow-lg">
+                                    Confirm Order (COD)
+                                </button>
+                                
+                                <!-- eSewa Submit Button (Hidden) -->
+                                <button type="button" id="esewa-submit-btn" 
+                                        class="hidden bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-bold transition shadow-md hover:shadow-lg">
+                                    Proceed with eSewa
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Right: Order Summary -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-lg shadow-md p-6 sticky top-4">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Order Summary</h3>
+                
+                <!-- Order Items -->
+                <div class="space-y-4 mb-6">
+                    {% for item in cart_items %}
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 rounded-lg overflow-hidden mr-3">
+                            {% if item.product.images.exists %}
+                            <img src="{{ item.product.images.first.image.url }}" 
+                                 alt="{{ item.product.name }}"
+                                 class="w-full h-full object-cover">
+                            {% else %}
+                            <div class="w-full h-full bg-gray-100 flex items-center justify-center">
+                                <span class="text-gray-400">
+                                    {% if item.product.is_cake %}🎂{% else %}🍞{% endif %}
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-medium text-gray-800">{{ item.product.name }}</h4>
+                            <p class="text-sm text-gray-600">Qty: {{ item.quantity }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-medium text-gray-800">Rs. {{ item.total_price }}</p>
+                            {% if item.product.is_cake %}
+                            <p class="text-xs text-gray-500">Customizable</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Order Totals -->
+                <div class="space-y-3 border-t border-gray-200 pt-4">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Subtotal</span>
+                        <span class="font-medium">Rs. {{ subtotal }}</span>
+                    </div>
+                </div>
+                
+                <!-- Delivery Info -->
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                    <div class="space-y-3">
+                        <div class="flex items-start">
+                            <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span class="text-sm text-gray-600">Free delivery in Kamalbinayak</span>
+                        </div>
+                        <div class="flex items-start">
+                            <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span class="text-sm text-gray-600">Rs. 50 delivery in Bhaktapur (outside Kamalbinayak)</span>
+                        </div>
+                        <div class="flex items-start">
+                            <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span class="text-sm text-gray-600">Rs. 100 delivery outside Bhaktapur</span>
+                        </div>
+                        <div class="flex items-start">
+                            <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span class="text-sm text-gray-600">Cake orders require 2 days preparation</span>
+                        </div>
+                        <div class="flex items-start">
+                            <svg class="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span class="text-sm text-gray-600">Call us: <a href="tel:+9779811223344" class="text-[#8f3232]">+977 9811223344</a></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for dynamic updates -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const codRadio = document.getElementById('cod');
+    const esewaRadio = document.getElementById('esewa');
+    const codSubmitBtn = document.getElementById('cod-submit-btn');
+    const esewaSubmitBtn = document.getElementById('esewa-submit-btn');
+    const esewaPaymentSection = document.getElementById('esewa-payment-section');
+    const esewaPayButton = document.getElementById('esewa-pay-button');
+    const orderForm = document.getElementById('order-form');
+    const deliveryAddressInput = document.querySelector('textarea[name="delivery_address"]');
+    const deliveryFeeElement = document.getElementById('delivery-fee');
+    const totalAmountElement = document.getElementById('total-amount');
+    const codTotalElement = document.getElementById('cod-total');
+    const esewaTotalElement = document.getElementById('esewa-total');
+    
+    // Calculate delivery fee based on address
+    function calculateDeliveryFee(address) {
+        if (!address) return 100; // Default outside Bhaktapur
+        
+        const addressLower = address.toLowerCase();
+        
+        if (addressLower.includes('kamalbinayak')) {
+            return 0; // Free delivery in Kamalbinayak
+        } else if (addressLower.includes('bhaktapur')) {
+            return 50; // Rs. 50 for Bhaktapur (outside Kamalbinayak)
+        } else {
+            return 100; // Rs. 100 outside Bhaktapur
+        }
+    }
+    
+    // Update order summary totals
+    function updateOrderSummary() {
+        const address = deliveryAddressInput ? deliveryAddressInput.value : '';
+        const subtotal = parseFloat('{{ subtotal }}');
+        const deliveryFee = calculateDeliveryFee(address);
+        const total = subtotal + deliveryFee;
+        
+        // Update delivery fee display
+        if (deliveryFeeElement) {
+            if (deliveryFee === 0) {
+                deliveryFeeElement.innerHTML = '<span class="text-green-600">Free</span>';
+            } else {
+                deliveryFeeElement.textContent = `Rs. ${deliveryFee}`;
+            }
+        }
+        
+        // Update total amounts
+        if (totalAmountElement) totalAmountElement.textContent = `Rs. ${total}`;
+        if (codTotalElement) codTotalElement.textContent = total;
+        if (esewaTotalElement) esewaTotalElement.textContent = total;
+    }
+    
+    // Payment method toggle
+    function togglePaymentMethod() {
+        if (codRadio.checked) {
+            // COD selected
+            codSubmitBtn.classList.remove('hidden');
+            esewaSubmitBtn.classList.add('hidden');
+            esewaPaymentSection.classList.add('hidden');
+        } else if (esewaRadio.checked) {
+            // eSewa selected
+            codSubmitBtn.classList.add('hidden');
+            esewaSubmitBtn.classList.remove('hidden');
+            esewaPaymentSection.classList.remove('hidden');
+        }
+    }
+    
+    // Show/hide custom flavor inputs
+    function setupCustomFlavorToggles() {
+        const flavorSelects = document.querySelectorAll('select[name*="flavor"]');
+        flavorSelects.forEach((select, index) => {
+            const customFlavorDiv = document.getElementById(`custom-flavor-${index}`);
+            
+            function toggleCustomFlavor() {
+                if (customFlavorDiv) {
+                    if (select.value === 'custom') {
+                        customFlavorDiv.classList.remove('hidden');
+                    } else {
+                        customFlavorDiv.classList.add('hidden');
+                    }
+                }
+            }
+            
+            select.addEventListener('change', toggleCustomFlavor);
+            toggleCustomFlavor(); // Initialize
+        });
+    }
+    
+    // Show/hide custom weight inputs
+    function setupCustomWeightToggles() {
+        const weightRadios = document.querySelectorAll('input[type="radio"][name*="weight"]');
+        
+        weightRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                const name = this.name;
+                const prefix = name.replace('-weight', '');
+                const indexMatch = prefix.match(/cake_form_(\d+)/);
+                
+                if (indexMatch) {
+                    const index = indexMatch[1];
+                    const customWeightDiv = document.getElementById(`custom-weight-${index}`);
+                    
+                    if (customWeightDiv) {
+                        if (this.value === 'custom') {
+                            customWeightDiv.classList.remove('hidden');
+                        } else {
+                            customWeightDiv.classList.add('hidden');
+                        }
+                    }
+                }
+            });
+        });
+        
+        // Initialize custom weight toggles
+        weightRadios.forEach(radio => {
+            if (radio.checked) {
+                radio.dispatchEvent(new Event('change'));
+            }
+        });
+    }
+    
+    // Set minimum date for delivery dates (2 days from today)
+    function setupDeliveryDates() {
+        const deliveryDateInputs = document.querySelectorAll('input[type="date"][name*="delivery_date"]');
+        const today = new Date();
+        const minDate = new Date(today);
+        minDate.setDate(today.getDate() + 2);
+        const minDateStr = minDate.toISOString().split('T')[0];
+        
+        // Set default date to 3 days from today
+        const defaultDate = new Date(today);
+        defaultDate.setDate(today.getDate() + 3);
+        const defaultDateStr = defaultDate.toISOString().split('T')[0];
+        
+        deliveryDateInputs.forEach(input => {
+            input.min = minDateStr;
+            if (!input.value) {
+                input.value = defaultDateStr;
+            }
+        });
+    }
+    
+    // Initialize everything
+    function initialize() {
+        togglePaymentMethod();
+        updateOrderSummary();
+        setupCustomFlavorToggles();
+        setupCustomWeightToggles();
+        setupDeliveryDates();
+        
+        // Listen for payment method changes
+        if (codRadio) codRadio.addEventListener('change', togglePaymentMethod);
+        if (esewaRadio) esewaRadio.addEventListener('change', togglePaymentMethod);
+        
+        // Update order summary when address changes
+        if (deliveryAddressInput) {
+            deliveryAddressInput.addEventListener('input', updateOrderSummary);
+            deliveryAddressInput.addEventListener('change', updateOrderSummary);
+        }
+        
+        // Handle eSewa submission
+        if (esewaSubmitBtn) {
+            esewaSubmitBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                esewaPaymentSection.classList.remove('hidden');
+                esewaSubmitBtn.classList.add('hidden');
+            });
+        }
+        
+        // Handle eSewa payment button click
+        if (esewaPayButton) {
+            esewaPayButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                orderForm.submit();
+            });
+        }
+    }
+    
+    // Run initialization
+    initialize();
+});
+</script>
+
+<style>
+/* Custom styling */
+.payment-option input:checked + label {
+    border-color: #8f3232;
+    background-color: rgba(143, 50, 50, 0.05);
+}
+
+#esewa:checked + label {
+    border-color: #10b981;
+    background-color: rgba(16, 185, 129, 0.05);
+}
+
+/* Form field styling */
+select, input[type="text"], input[type="number"], input[type="date"], textarea {
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    width: 100%;
+}
+
+select:focus, input[type="text"]:focus, input[type="number"]:focus, 
+input[type="date"]:focus, textarea:focus {
+    outline: none;
+    border-color: #8f3232;
+}
+</style>
+{% endblock %}

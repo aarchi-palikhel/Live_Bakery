@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Live Bakery - Fresh Bakes Daily{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="bg-linear-to-br from-amber-50 to-orange-50 py-20">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="text-center">
+            <h1 class="text-5xl font-bold text-gray-800 mb-6 leading-tight">
+                Fresh Bakery Products<br>
+                <span class="text-amber-600">For Every Celebration</span>
+            </h1>
+            <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                Located in Kamalbinayak, Bhaktapur - serving quality baked goods for birthdays,
+                anniversaries, and daily enjoyment. Freshly baked with premium ingredients.
+            </p>
+            <div class="space-x-4">
+                <a href="{% url 'products:product_list' %}" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-8 rounded-lg text-lg transition duration-200 shadow-lg">
+                    Order Now
+                </a>
+                <a href="{% url 'core:about' %}" class="border border-amber-500 text-amber-600 hover:bg-amber-50 font-bold py-3 px-8 rounded-lg text-lg transition duration-200">
+                    Learn More
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-16 bg-white">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="text-center mb-12">
+            <h2 class="text-4xl font-bold text-gray-800 mb-4">Why Choose Live Bakery?</h2>
+            <p class="text-lg text-gray-600">Quality and freshness you can trust</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="text-center p-8 bg-white rounded-lg shadow-lg border border-gray-100">
+                <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0v-3a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0v3a2.704 2.704 0 01-1.5-.454z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-3">Fresh Daily</h3>
+                <p class="text-gray-600">Baked fresh every morning with no preservatives or artificial ingredients</p>
+            </div>
+           
+            <div class="text-center p-8 bg-white rounded-lg shadow-lg border border-gray-100">
+                <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-3">Local Community</h3>
+                <p class="text-gray-600">Proudly serving the Kamalbinayak community with quality bakery products</p>
+            </div>
+           
+            <div class="text-center p-8 bg-white rounded-lg shadow-lg border border-gray-100">
+                <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2v-1m8-9v2a2 2 0 002 2h2M7 8h-2a2 2 0 00-2 2v6a2 2 0 002 2h2v4l4-4h3a2 2 0 002-2v-1m-8-9v2a2 2 0 01-2 2H3"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-3">Celebration Specials</h3>
+                <p class="text-gray-600">Perfect cakes and treats for birthdays, anniversaries, and special occasions</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Products Section -->
+<section class="py-16 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="text-center mb-12">
+            <h2 class="text-4xl font-bold text-gray-800 mb-4">Featured Products</h2>
+            <p class="text-lg text-gray-600">Our special selections curated just for you</p>
+        </div>
+       
+        {% if featured_products %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {% for product in featured_products %}
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition duration-300 border border-gray-100">
+                <!-- Product Image -->
+                {% if product.image %}
+                <div class="h-48 overflow-hidden">
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-full h-full object-cover transform hover:scale-105 transition duration-300">
+                </div>
+                {% else %}
+                <div class="h-48 bg-amber-50 flex items-center justify-center">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0v-3a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0v3a2.704 2.704 0 01-1.5-.454z"/>
+                            </svg>
+                        </div>
+                        <p class="text-sm text-amber-600 font-medium">{{ product.category|default:"Bakery" }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">{{ product.name }}</h3>
+                    <p class="text-gray-600 mb-4 text-sm">{{ product.description|truncatechars:60 }}</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-2xl font-bold text-amber-600">Rs. {{ product.base_price }}</span>
+                        {% if user.is_authenticated %}
+                            <form method="post" action="{% url 'cart:cart_add' product.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg transition duration-200 text-sm">
+                                    Add to Cart
+                                </button>
+                            </form>
+                        {% else %}
+                            <a href="{% url 'users:login' %}" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition duration-200 text-sm">
+                                Login to Order
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if featured_products.count > 4 %}
+        <div class="text-center mt-12">
+            <a href="{% url 'products:product_list' %}" class="border border-amber-500 text-amber-600 hover:bg-amber-50 font-bold py-3 px-8 rounded-lg text-lg transition duration-200">
+                View All Products
+            </a>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center py-12">
+            <div class="w-24 h-24 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-12 h-12 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-700 mb-2">No Featured Products Available</h3>
+            <p class="text-gray-600 mb-6">Check back soon for our featured selections!</p>
+            <a href="{% url 'products:product_list' %}" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-8 rounded-lg text-lg transition duration-200 shadow-lg">
+                Browse All Products
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-16 bg-amber-600">
+    <div class="max-w-4xl mx-auto px-4 text-center">
+        <h2 class="text-4xl font-bold text-white mb-4">Ready to Order?</h2>
+        <p class="text-xl text-amber-100 mb-8">
+            Fresh bakery products delivered to your doorstep in Kamalbinayak and surrounding areas.
+        </p>
+        {% if user.is_authenticated %}
+            <a href="{% url 'products:product_list' %}" class="bg-white text-amber-600 hover:bg-gray-100 font-bold py-3 px-8 rounded-lg text-lg transition duration-200 shadow-lg">
+                Shop Now
+            </a>
+        {% else %}
+            <a href="{% url 'users:register' %}" class="bg-white text-amber-600 hover:bg-gray-100 font-bold py-3 px-8 rounded-lg text-lg transition duration-200 shadow-lg">
+                Create Account
+            </a>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

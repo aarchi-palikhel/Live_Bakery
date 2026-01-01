@@ -1,0 +1,310 @@
+<!-- product_list.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if category %}
+        {{ category.name }} - Live Bakery
+    {% else %}
+        All Products - Live Bakery
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<!-- Messages Display for Add to Cart -->
+{% if messages %}
+<div class="fixed top-4 right-4 z-50 space-y-2 max-w-md">
+    {% for message in messages %}
+    <div class="p-4 rounded-lg shadow-lg animate-slideInRight 
+                {% if message.tags == 'error' %}bg-red-50 border-l-4 border-red-500 text-red-700
+                {% elif message.tags == 'success' %}bg-green-50 border-l-4 border-green-500 text-green-700
+                {% elif message.tags == 'warning' %}bg-yellow-50 border-l-4 border-yellow-500 text-yellow-700
+                {% else %}bg-blue-50 border-l-4 border-blue-500 text-blue-700{% endif %}">
+        <div class="flex items-start">
+            <div class="shrink-0">
+                {% if message.tags == 'success' %}
+                <svg class="h-6 w-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                {% elif message.tags == 'error' %}
+                <svg class="h-6 w-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                {% elif message.tags == 'warning' %}
+                <svg class="h-6 w-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.998-.833-2.768 0L4.342 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                </svg>
+                {% else %}
+                <svg class="h-6 w-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                {% endif %}
+            </div>
+            <div class="ml-3">
+                <p class="font-medium">{{ message }}</p>
+            </div>
+            <div class="ml-auto pl-3">
+                <button onclick="this.parentElement.parentElement.parentElement.remove()" 
+                        class="inline-flex text-gray-400 hover:text-gray-500">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+// Auto-remove messages after 5 seconds
+document.addEventListener('DOMContentLoaded', function() {
+    const messages = document.querySelectorAll('[class*="animate-slideInRight"]');
+    messages.forEach(message => {
+        setTimeout(() => {
+            message.style.transition = 'all 0.3s ease';
+            message.style.opacity = '0';
+            message.style.transform = 'translateX(100%)';
+            setTimeout(() => message.remove(), 300);
+        }, 5000);
+    });
+});
+</script>
+{% endif %}
+
+<!-- Hero Section -->
+<section class="bg-linear-to-br from-amber-50 to-orange-50 py-12">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="text-center">
+            <h1 class="text-4xl font-bold text-gray-800 mb-4">
+                {% if category %}
+                    {{ category.name }}
+                {% else %}
+                    Our Bakery Collection
+                {% endif %}
+            </h1>
+            <p class="text-lg text-gray-600">
+                {% if category %}
+                    {{ category.description|default:"Delicious treats in this category" }}
+                {% else %}
+                    Freshly baked with love using premium ingredients
+                {% endif %}
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- Products Section -->
+<section class="py-12 bg-white">
+    <div class="max-w-7xl mx-auto px-4">
+        <!-- Category Filters -->
+        <div class="mb-8">
+            <div class="flex flex-wrap gap-2 mb-4">
+                <a href="{% url 'products:product_list' %}" 
+                   class="{% if not category %}bg-amber-500 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} px-4 py-2 rounded-lg transition duration-200">
+                    All Products
+                </a>
+                
+                {% for cat in categories %}
+                <a href="{% url 'products:product_list_by_category' category_slug=cat.slug %}" 
+                   class="{% if category and category.slug == cat.slug %}bg-amber-500 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} px-4 py-2 rounded-lg transition duration-200">
+                    {{ cat.name }}
+                </a>
+                {% endfor %}
+            </div>
+            
+            <!-- Search Form -->
+            <div class="mb-6">
+                <form method="get" action="{% url 'products:product_search' %}" class="flex gap-4">
+                    <input type="text" 
+                           name="query" 
+                           placeholder="Search for products..."
+                           value="{{ request.GET.query }}"
+                           class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                    <button type="submit" 
+                            class="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-lg transition duration-200">
+                        Search
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Products Grid -->
+        {% if products %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {% for product in products %}
+                    {% include 'products/product_card.html' with product=product %}
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <div class="flex justify-center mt-12">
+                <nav class="flex space-x-2">
+                    {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}{% if category %}&category={{ category.slug }}{% endif %}" 
+                           class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition duration-200">
+                            Previous
+                        </a>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <span class="px-4 py-2 bg-amber-500 text-white rounded-lg">{{ num }}</span>
+                        {% else %}
+                            <a href="?page={{ num }}{% if category %}&category={{ category.slug }}{% endif %}" 
+                               class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition duration-200">
+                                {{ num }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if category %}&category={{ category.slug }}{% endif %}" 
+                           class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition duration-200">
+                            Next
+                        </a>
+                    {% endif %}
+                </nav>
+            </div>
+            {% endif %}
+        {% else %}
+            <!-- No Products Found -->
+            <div class="text-center py-12">
+                <div class="w-24 h-24 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-12 h-12 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">No Products Found</h3>
+                <p class="text-gray-600 mb-6">We couldn't find any products matching your criteria.</p>
+                <a href="{% url 'products:product_list' %}" 
+                   class="inline-block bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-lg transition duration-200">
+                    View All Products
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<style>
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.animate-slideInRight {
+    animation: slideInRight 0.3s ease-out;
+}
+</style>
+
+<script>
+// Optional: AJAX add to cart functionality for better UX
+document.addEventListener('DOMContentLoaded', function() {
+    // Function to show toast message
+    function showToast(message, type = 'success') {
+        // Remove any existing toasts to avoid stacking
+        const existingToasts = document.querySelectorAll('.custom-toast');
+        existingToasts.forEach(toast => toast.remove());
+        
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = `custom-toast fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg animate-slideInRight 
+                          ${type === 'success' ? 'bg-green-50 border-l-4 border-green-500 text-green-700' : 
+                            type === 'error' ? 'bg-red-50 border-l-4 border-red-500 text-red-700' :
+                            'bg-blue-50 border-l-4 border-blue-500 text-blue-700'}`;
+        
+        toast.innerHTML = `
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    ${type === 'success' ? 
+                        '<svg class="h-6 w-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>' :
+                        '<svg class="h-6 w-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
+                    }
+                </div>
+                <div class="ml-3">
+                    <p class="font-medium">${message}</p>
+                </div>
+                <div class="ml-auto pl-3">
+                    <button onclick="this.parentElement.parentElement.parentElement.remove()" 
+                            class="inline-flex text-gray-400 hover:text-gray-500">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            toast.style.transition = 'all 0.3s ease';
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(100%)';
+            setTimeout(() => toast.remove(), 300);
+        }, 5000);
+    }
+    
+    // Handle add to cart buttons with AJAX if they exist
+    const addToCartButtons = document.querySelectorAll('[data-add-to-cart]');
+    addToCartButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const form = this.closest('form');
+            if (!form) return;
+            
+            const originalText = this.innerHTML;
+            this.innerHTML = `
+                <svg class="animate-spin h-5 w-5 mr-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                Adding...
+            `;
+            this.disabled = true;
+            
+            // Submit form via AJAX
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update cart count in header if you have one
+                    const cartCountElement = document.querySelector('.cart-count');
+                    if (cartCountElement) {
+                        cartCountElement.textContent = data.cart_count;
+                    }
+                    
+                    // Show success toast
+                    showToast(data.message, 'success');
+                } else {
+                    showToast('Failed to add item to cart', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Failed to add item to cart', 'error');
+            })
+            .finally(() => {
+                // Restore button
+                this.innerHTML = originalText;
+                this.disabled = false;
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

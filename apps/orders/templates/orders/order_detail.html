@@ -1,0 +1,441 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load orders_filters %}
+
+{% block title %}Order #{{ order.order_number }} - Live Bakery{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto my-8 px-4">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-[#8f3232] mb-2">Order #{{ order.order_number }}</h1>
+                <div class="flex items-center space-x-4">
+                    <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full {{ order.get_status_display_class }}">
+                        {{ order.get_status_display }}
+                    </span>
+                    <span class="text-gray-600">Placed on {{ order.created_at|date:"F d, Y" }}</span>
+                </div>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <a href="{% url 'orders:order_list' %}" 
+                   class="inline-flex items-center text-[#8f3232] hover:text-[#7a2a2a] font-medium">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    Back to Orders
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="mb-6">
+        {% for message in messages %}
+        <div class="p-4 mb-2 rounded-lg {% if message.tags == 'error' %}bg-red-50 text-red-700{% elif message.tags == 'success' %}bg-green-50 text-green-700{% elif message.tags == 'warning' %}bg-yellow-50 text-yellow-700{% else %}bg-blue-50 text-blue-700{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="grid lg:grid-cols-3 gap-8">
+        <!-- Order Details -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Order Items -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-xl font-bold text-gray-800">Order Items</h2>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-6">
+                        {% for item in order_items %}
+                        <div class="flex items-start border-b border-gray-100 pb-6 last:border-0 last:pb-0">
+                            <div class="w-20 h-20 rounded-lg overflow-hidden mr-4 shrink-0">
+                                {% if item.product.images.exists %}
+                                <img src="{{ item.product.images.first.image.url }}" 
+                                     alt="{{ item.product.name }}"
+                                     class="w-full h-full object-cover">
+                                {% else %}
+                                <div class="w-full h-full bg-gray-100 flex items-center justify-center">
+                                    <span class="text-2xl text-gray-400">
+                                        {% if item.is_cake %}🎂{% else %}🍞{% endif %}
+                                    </span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex justify-between">
+                                    <div>
+                                        <h3 class="font-semibold text-gray-800">{{ item.product.name }}</h3>
+                                        <p class="text-sm text-gray-600">Quantity: {{ item.quantity }}</p>
+                                        <p class="text-sm text-gray-600">Price: Rs. {{ item.price }}</p>
+                                        
+                                        {% if item.is_cake %}
+                                        <div class="mt-2 space-y-1">
+                                            {% if item.cake_flavor %}
+                                            <p class="text-sm text-gray-600">
+                                                <span class="font-medium">Flavor:</span> 
+                                                {% if item.cake_flavor == 'custom' and item.cake_custom_flavor %}
+                                                    Custom: {{ item.cake_custom_flavor }}
+                                                {% else %}
+                                                    {{ item.get_cake_flavor_display|default:item.cake_flavor }}
+                                                {% endif %}
+                                            </p>
+                                            {% endif %}
+                                            
+                                            {% if item.cake_weight %}
+                                            <p class="text-sm text-gray-600">
+                                                <span class="font-medium">Weight:</span> 
+                                                {% if item.cake_weight == 'custom' and item.cake_custom_weight %}
+                                                    Custom: {{ item.cake_custom_weight }} lb
+                                                {% else %}
+                                                    {{ item.cake_weight }} lb
+                                                {% endif %}
+                                            </p>
+                                            {% endif %}
+                                            
+                                            {% if item.cake_tiers %}
+                                            <p class="text-sm text-gray-600">
+                                                <span class="font-medium">Tiers:</span> {{ item.cake_tiers }}
+                                            </p>
+                                            {% endif %}
+                                            
+                                            {% if item.message_on_cake %}
+                                            <p class="text-sm text-gray-600">
+                                                <span class="font-medium">Message:</span> "{{ item.message_on_cake }}"
+                                            </p>
+                                            {% endif %}
+                                            
+                                            {% if item.delivery_date %}
+                                            <p class="text-sm text-gray-600">
+                                                <span class="font-medium">Delivery Date:</span> {{ item.delivery_date }}
+                                            </p>
+                                            {% endif %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="font-semibold text-gray-800">Rs. {{ item.total_price }}</p>
+                                    </div>
+                                </div>
+                                
+                                {% if item.special_instructions %}
+                                <div class="mt-2 p-3 bg-gray-50 rounded-lg">
+                                    <p class="text-sm text-gray-700">
+                                        <span class="font-medium">Special Instructions:</span> 
+                                        {{ item.special_instructions }}
+                                    </p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Timeline - Horizontal Version -->
+            <div class="bg-white rounded-lg shadow mt-6">
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-xl font-bold text-gray-800">Order Status Timeline</h2>
+                </div>
+                <div class="p-6">
+                    <div class="relative">
+                        <!-- Progress bar -->
+                        <div class="absolute top-1/2 left-0 right-0 h-1 bg-gray-200 -translate-y-1/2"></div>
+                        <div class="absolute top-1/2 left-0 h-2 bg-green-500 -translate-y-1/2 rounded-full transition-all duration-500
+                            {% if order.status == 'pending' %}w-1/5
+                            {% elif order.status == 'confirmed' %}w-2/5
+                            {% elif order.status == 'baking' %}w-3/5
+                            {% elif order.status == 'ready' %}w-4/5
+                            {% elif order.status == 'completed' or order.status == 'cancelled' %}w-full
+                            {% else %}w-0{% endif %}">
+                        </div>
+                        
+                        <!-- Status steps -->
+                        <div class="relative flex justify-between">
+                            {% with status_order="pending confirmed baking ready completed cancelled" %}
+                            {% with status_display="Pending Confirmed Baking Ready Completed Cancelled" %}
+                            {% with status_icons="⏳ 🔵 🧁 📦 ✅ ❌" %}
+                            
+                            {% for status in status_order.split %}
+                                <div class="flex flex-col items-center">
+                                    <!-- Status circle -->
+                                    <div class="w-12 h-12 rounded-full flex items-center justify-center mb-2 relative z-10
+                                        {% if order.status == status %}
+                                        bg-{{ status_colors.split|index:forloop.counter0 }}-600 text-white ring-4 ring-{{ status_colors.split|index:forloop.counter0 }}-200
+                                        {% elif order.status_index >= forloop.counter0 %}
+                                        bg-{{ status_colors.split|index:forloop.counter0 }}-600 text-white
+                                        {% else %}
+                                        bg-gray-200 text-gray-400
+                                        {% endif %}">
+                                        {% if order.status_index >= forloop.counter0 %}
+                                            <span class="text-xl">{{ status_icons.split|index:forloop.counter0 }}</span>
+                                        {% else %}
+                                            <span class="text-lg font-semibold">{{ forloop.counter }}</span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Status label -->
+                                    <div class="text-center">
+                                        <p class="text-sm font-medium text-gray-800">{{ status_display.split|index:forloop.counter0 }}</p>
+                                        {% if order.status == status %}
+                                        <p class="text-xs text-gray-500 mt-1">Current Status</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                            
+                            {% endwith %}
+                            {% endwith %}
+                            {% endwith %}
+                    </div>
+            </div>
+        
+            <!-- Current status details -->
+            <div class="mt-8 p-4 bg-gray-50 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="font-semibold text-gray-800">Current Status: {{ order.get_status_display }}</h3>
+                                <p class="text-sm text-gray-600 mt-1">
+                                    {% if order.status == 'pending' %}
+                                    Your order has been received and is being reviewed.
+                                    {% elif order.status == 'confirmed' %}
+                                    Your order has been confirmed and is being prepared.
+                                    {% elif order.status == 'baking' %}
+                                    Your items are currently being baked.
+                                    {% elif order.status == 'ready' %}
+                                    Your order is ready for pickup/delivery.
+                                    {% elif order.status == 'completed' %}
+                                    Your order has been successfully delivered.
+                                    {% elif order.status == 'cancelled' %}
+                                    This order has been cancelled.
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm text-gray-600">Last updated</p>
+                                <p class="font-medium text-gray-800">{{ order.updated_at|date:"M d, Y g:i A" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Design References (for cakes) -->
+            {% if design_references %}
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-xl font-bold text-gray-800">Design References</h2>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {% for reference in design_references %}
+                        <div class="border border-gray-200 rounded-lg overflow-hidden">
+                            <div class="h-48 overflow-hidden">
+                                <img src="{{ reference.image.url }}" 
+                                     alt="{{ reference.title }}"
+                                     class="w-full h-full object-cover hover:scale-105 transition duration-300">
+                            </div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-gray-800 mb-2">{{ reference.title }}</h3>
+                                {% if reference.description %}
+                                <p class="text-sm text-gray-600">{{ reference.description }}</p>
+                                {% endif %}
+                                <p class="text-xs text-gray-500 mt-2">Uploaded: {{ reference.uploaded_at|date:"M d, Y" }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Column: Order Summary -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- Order Summary -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-xl font-bold text-gray-800">Order Summary</h2>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-4">
+                        <!-- Order Info -->
+                        <div>
+                            <h3 class="font-semibold text-gray-800 mb-2">Order Information</h3>
+                            <div class="space-y-2">
+                                <p class="text-sm">
+                                    <span class="text-gray-600">Order Number:</span>
+                                    <span class="font-medium ml-2">#{{ order.order_number }}</span>
+                                </p>
+                                <p class="text-sm">
+                                    <span class="text-gray-600">Order Date:</span>
+                                    <span class="font-medium ml-2">{{ order.created_at|date:"F d, Y, g:i A" }}</span>
+                                </p>
+                                <p class="text-sm">
+                                    <span class="text-gray-600">Status:</span>
+                                    <span class="ml-2 px-2 py-1 text-xs font-semibold rounded-full {{ order.get_status_display_class }}">
+                                        {{ order.get_status_display }}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Delivery Info -->
+                        <div class="pt-4 border-t border-gray-200">
+                            <h3 class="font-semibold text-gray-800 mb-2">Delivery Information</h3>
+                            <div class="space-y-2">
+                                <p class="text-sm">
+                                    <span class="text-gray-600">Address:</span>
+                                    <span class="font-medium ml-2 block mt-1">{{ order.delivery_address }}</span>
+                                </p>
+                                <p class="text-sm">
+                                    <span class="text-gray-600">Phone:</span>
+                                    <span class="font-medium ml-2">{{ order.phone_number }}</span>
+                                </p>
+                                {% if order.special_instructions %}
+                                <p class="text-sm">
+                                    <span class="text-gray-600">Instructions:</span>
+                                    <span class="font-medium ml-2 block mt-1">{{ order.special_instructions }}</span>
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Payment Info -->
+                        <div class="pt-4 border-t border-gray-200">
+                            <h3 class="font-semibold text-gray-800 mb-2">Payment Information</h3>
+                            <div class="space-y-2">
+                                <p class="text-sm">
+                                    <span class="text-gray-600">Method:</span>
+                                    <span class="font-medium ml-2">{{ order.get_payment_method_display }}</span>
+                                </p>
+                                <p class="text-sm">
+                                    <span class="text-gray-600">Status:</span>
+                                    <span class="ml-2">
+                                        {% if order.payment_status %}
+                                        <span class="text-green-600 font-medium">✓ Paid</span>
+                                        {% else %}
+                                        <span class="text-yellow-600 font-medium">Pending</span>
+                                        {% endif %}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Order Totals -->
+                        <div class="pt-4 border-t border-gray-200">
+                            <h3 class="font-semibold text-gray-800 mb-2">Order Total</h3>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Subtotal</span>
+                                    <span class="font-medium">Rs. {{ order.total_amount|add:"-delivery_fee" }}</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Delivery Fee</span>
+                                    <span class="font-medium">
+                                        {% if delivery_fee == 0 %}
+                                        <span class="text-green-600">Free</span>
+                                        {% else %}
+                                        Rs. {{ delivery_fee }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="flex justify-between text-lg font-bold pt-2 border-t border-gray-200">
+                                    <span>Total</span>
+                                    <span class="text-[#8f3232]">Rs. {{ order.total_amount }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="pt-4 border-t border-gray-200">
+                            <div class="space-y-3">
+                                {% if order.status == 'pending' %}
+                                <form method="post" action="{% url 'orders:order_cancel' order.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" 
+                                            onclick="return confirm('Are you sure you want to cancel this order?')"
+                                            class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition">
+                                        Cancel Order
+                                    </button>
+                                </form>
+                                {% endif %}
+                                
+                                {% if order.status == 'completed' %}
+                                <a href="{% url 'orders:order_invoice' order.id %}" 
+                                   class="block w-full text-center px-4 py-2 bg-[#8f3232] text-white rounded-lg hover:bg-[#8f3232] font-medium transition">
+                                    Download Invoice
+                                </a>
+                                {% endif %}
+                                
+                                <a href="{% url 'products:product_list'%}" 
+                                   class="block w-full text-center px-4 py-2 border bg-[#8f3232]  text-white rounded-lg font-medium transition">
+                                    Continue Shopping 🛒
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Status timeline styling */
+.bg-yellow-100 { background-color: #fef3c7; }
+.text-yellow-600 { color: #d97706; }
+.bg-yellow-600 { background-color: #d97706; }
+
+.bg-blue-100 { background-color: #dbeafe; }
+.text-blue-600 { color: #2563eb; }
+.bg-blue-600 { background-color: #2563eb; }
+
+.bg-purple-100 { background-color: #e9d5ff; }
+.text-purple-600 { color: #7c3aed; }
+.bg-purple-600 { background-color: #7c3aed; }
+
+.bg-green-100 { background-color: #d1fae5; }
+.text-green-600 { color: #059669; }
+.bg-green-600 { background-color: #059669; }
+
+.bg-gray-100 { background-color: #f3f4f6; }
+.text-gray-600 { color: #4b5563; }
+.bg-gray-600 { background-color: #4b5563; }
+
+.bg-red-100 { background-color: #fee2e2; }
+.text-red-600 { color: #dc2626; }
+.bg-red-600 { background-color: #dc2626; }
+
+/* Hover effects */
+.hover\:scale-105:hover {
+    transform: scale(1.05);
+}
+
+.transition {
+    transition: all 0.3s ease;
+}
+</style>
+
+<script>
+// Simple index filter for template (since we can't use list indexing easily)
+document.addEventListener('DOMContentLoaded', function() {
+    // Add status index to order object for timeline
+    const statusOrder = ['pending', 'confirmed', 'baking', 'ready', 'completed', 'cancelled'];
+    const currentStatus = '{{ order.status }}';
+    const statusIndex = statusOrder.indexOf(currentStatus);
+    
+    // Update timeline based on current status
+    const timelineSteps = document.querySelectorAll('.timeline-step');
+    timelineSteps.forEach((step, index) => {
+        if (index <= statusIndex) {
+            step.classList.add('active');
+        }
+    });
+});
+</script>
+{% endblock %}

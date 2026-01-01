@@ -1,0 +1,53 @@
+{% load static tailwind_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Live Bakery - Fresh Bakes Daily{% endblock %}</title>
+   
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>LB</text></svg>">
+   
+    <!-- CSRF Token for AJAX requests -->
+    <meta name="csrf-token" content="{{ csrf_token }}">
+   
+   {% tailwind_css %}
+</head>
+<body class="bg-white min-h-screen flex flex-col">
+    <!-- Include Navbar -->
+    {% include 'partials/navbar.html' %}
+   
+    <!-- Messages -->
+    {% if messages %}
+    <div class="max-w-7xl mx-auto px-4 mt-4">
+        {% for message in messages %}
+        <div class="{% if message.tags == 'error' %}bg-red-100 border-red-400 text-red-700{% elif message.tags == 'warning' %}bg-yellow-100 border-yellow-400 text-yellow-700{% elif message.tags == 'success' %}bg-green-100 border-green-400 text-green-700{% else %}bg-blue-100 border-blue-400 text-blue-700{% endif %} border px-4 py-3 rounded mb-4">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+   
+    <!-- Main Content -->
+    <main class="flex-1">
+        {% block content %}
+        {% endblock %}
+    </main>
+   
+    <!-- Include Footer -->
+    {% include 'partials/footer.html' %}
+
+    <!-- JavaScript for CSRF token and general functionality -->
+    <script>
+    // Get CSRF token for AJAX requests
+    function getCSRFToken() {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+        return csrfToken ? csrfToken.value : '';
+    }
+    
+    // Set up AJAX CSRF token
+    const csrftoken = getCSRFToken();
+    </script>
+</body>
+</html>

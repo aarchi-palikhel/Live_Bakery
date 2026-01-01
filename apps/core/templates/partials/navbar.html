@@ -1,0 +1,189 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Live Bakery Kamalbinayak{% endblock %}</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{% static 'theme/images/logo.png' %}">
+</head>
+<body>
+    <!-- Simple Navbar -->
+    <nav class="bg-[#8f3232] py-4 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex items-center justify-between">
+                <!-- Left: Logo -->
+                <div class="flex items-center">
+                    <a href="{% url 'core:home' %}" class="flex items-center">
+                        <!-- Logo Image -->
+                        <div class="w-35 h-35 rounded-full flex items-center justify-center mr-3 overflow-hidden bg-white">
+                            <img 
+                                src="{% static 'theme/images/logo.png' %}" 
+                                alt="Live Bakery Logo" 
+                                class="w-full h-full object-contain"
+                            >
+                        </div>
+                        <div>
+                            <h1 class="text-white font-bold text-xl">Live Bakery</h1>
+                            <p class="text-[#eec1ad] text-sm">Kamalbinayak, Bhaktapur</p>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Center: Navigation -->
+                <div class="flex items-center space-x-8">
+                    <a href="{% url 'core:home' %}" class="text-[#eec1ad] hover:text-white font-medium">Home</a>
+                    <a href="{% url 'products:product_list' %}" class="text-[#eec1ad] hover:text-white font-medium">Products</a>
+                    <a href="{% url 'core:about' %}" class="text-[#eec1ad] hover:text-white font-medium">About Us</a>
+                    <a href="{% url 'core:contact' %}" class="text-[#eec1ad] hover:text-white font-medium">Contact</a>
+                </div>
+
+                <!-- Right: Actions -->
+                <div class="flex items-center space-x-4">
+                    {% if user.is_authenticated %}
+                        <!-- Registered User: Show Cart and Profile -->
+                        <a href="{% url 'cart:cart_detail' %}" class="text-[#eec1ad] hover:text-white relative">
+                            <!-- Shopping Basket SVG Icon -->
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                            </svg>
+                            <span class="absolute -top-2 -right-2 bg-[#eec1ad] text-[#8f3232] text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold"
+                                  id="cart-count">
+                                {{ cart_item_count|default:0 }}
+                            </span>
+                        </a>
+                        
+                        <!-- User Profile Dropdown -->
+                        <div class="relative group">
+                            <button class="flex items-center space-x-2 text-[#eec1ad] hover:text-white focus:outline-none">
+                                <div class="w-8 h-8 bg-[#eec1ad] rounded-full flex items-center justify-center">
+                                    <span class="text-[#8f3232] font-bold text-sm">
+                                        {{ user.username|first|upper }}
+                                    </span>
+                                </div>
+                                <span class="font-medium">{{ user.username }}</span>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            
+                            <!-- Dropdown Menu -->
+                            <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                                <a href="{% url 'users:profile' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    📋 My Profile
+                                </a>
+                                <div class="border-t border-gray-100"></div>
+                                <!-- Correct logout URL -->
+                                <a href="{% url 'users:logout' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    🚪 Logout
+                                </a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <!-- Unregistered User: Show Login/Register (No Cart) -->
+                        <div class="flex items-center space-x-3">
+                            <a href="{% url 'users:login' %}" class="bg-[#eec1ad] text-[#8f3232] px-4 py-2 rounded font-medium hover:bg-[#dbac98]">
+                                Login
+                            </a>
+                            <a href="{% url 'users:register' %}" class="border border-[#eec1ad] text-[#eec1ad] px-4 py-2 rounded font-medium hover:bg-[#eec1ad] hover:text-[#8f3232]">
+                                Register
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    {% block content %}
+    {% endblock %}
+
+    <!-- Add JavaScript for cart count updates -->
+    <script>
+    // Function to update cart count
+    function updateCartCount(count) {
+        const cartCountElement = document.getElementById('cart-count');
+        if (cartCountElement) {
+            cartCountElement.textContent = count;
+            console.log('Cart count updated to:', count);
+        }
+    }
+
+    // Function to handle AJAX form submissions
+    function handleAddToCartAJAX(event, form) {
+        event.preventDefault();
+        
+        const formData = new FormData(form);
+        
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update cart count
+                updateCartCount(data.cart_count);
+                
+                // Show success message (you can customize this)
+                if (data.message) {
+                    // Create a temporary notification
+                    const notification = document.createElement('div');
+                    notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+                    notification.textContent = data.message;
+                    document.body.appendChild(notification);
+                    
+                    // Remove after 3 seconds
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 3000);
+                }
+            } else {
+                // Show error
+                alert('Error: ' + (data.error || 'Failed to add to cart'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Fallback: submit form normally
+            form.submit();
+        });
+    }
+
+    // Attach event listeners when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Find all Add to Cart forms with class 'add-to-cart-form'
+        const addToCartForms = document.querySelectorAll('form.add-to-cart-form');
+        
+        addToCartForms.forEach(form => {
+            form.addEventListener('submit', function(event) {
+                handleAddToCartAJAX(event, this);
+            });
+        });
+        
+        // You can also initialize with current cart count from server
+        // This requires creating a '/cart/get-count/' endpoint
+        // fetch('/cart/get-count/')
+        //     .then(response => response.json())
+        //     .then(data => {
+        //         if (data.success) {
+        //             updateCartCount(data.cart_count);
+        //         }
+        //     })
+        //     .catch(error => console.error('Error fetching cart count:', error));
+    });
+
+    // Listen for custom events to update cart count
+    document.addEventListener('cartUpdated', function(event) {
+        if (event.detail && event.detail.count !== undefined) {
+            updateCartCount(event.detail.count);
+        }
+    });
+    </script>
+</body>
+</html>

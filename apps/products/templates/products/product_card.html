@@ -1,0 +1,116 @@
+<div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition duration-300 border border-gray-100">
+    <a href="{% url 'products:product_detail' product_id=product.id %}">
+        <div class="h-48 bg-gray-50 flex items-center justify-center relative overflow-hidden">
+            {% if product.images.exists %}
+                {% with product.images.first as main_image %}
+                <img src="{{ main_image.image.url }}" 
+                     alt="{{ main_image.alt_text|default:product.name }}" 
+                     class="w-full h-full object-cover hover:scale-105 transition-transform duration-300">
+                {% endwith %}
+            {% else %}
+                <div class="text-center p-4">
+                    <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        {% if product.is_cake %}
+                        <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0v-3a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0v3a2.704 2.704 0 01-1.5-.454z"/>
+                        </svg>
+                        {% else %}
+                        <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/>
+                        </svg>
+                        {% endif %}
+                    </div>
+                    <p class="text-amber-600 font-medium">{{ product.category.name }}</p>
+                </div>
+            {% endif %}
+            
+            <!-- Badges -->
+            
+            {% if product.is_featured %}
+            <div class="absolute top-2 left-2">
+                <span class="bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                    Featured
+                </span>
+            </div>
+            {% endif %}
+            
+            {% if not product.in_stock %}
+            <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                <span class="bg-red-500 text-white text-sm font-bold px-3 py-1 rounded-full">
+                    Out of Stock
+                </span>
+            </div>
+            {% endif %}
+        </div>
+    </a>
+    
+    <div class="p-6">
+        <a href="{% url 'products:product_detail' product_id=product.id %}">
+            <h3 class="text-xl font-bold text-gray-800 mb-2 hover:text-amber-600 transition duration-200">
+                {{ product.name }}
+            </h3>
+        </a>
+        
+        <!-- Product Info -->
+        <div class="mb-3">
+            {% if product.is_cake and product.get_available_flavors_list %}
+            <div class="mb-2">
+                <span class="text-sm text-purple-600 font-medium">
+                    Flavors: {{ product.get_available_flavors_list|join:", "|truncatewords:3 }}
+                </span>
+            </div>
+            {% endif %}
+            
+            <p class="text-gray-600 text-sm line-clamp-2 mb-3">
+                {{ product.short_description|default:product.description|truncatewords:15 }}
+            </p>
+            
+            {% if product.weight %}
+            <div class="text-xs text-gray-500 mb-2">
+                <span class="font-medium">Weight:</span> {{ product.weight }}
+            </div>
+            {% endif %}
+            
+            {% if product.serves %}
+            <div class="text-xs text-gray-500 mb-2">
+                <span class="font-medium">Serves:</span> {{ product.serves }}
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Price and Action -->
+        <div class="flex justify-between items-center">
+            <div>
+                <span class="text-xl font-bold text-amber-600">Rs. {{ product.base_price }}</span>
+            </div>
+            
+            {% if user.is_authenticated %}
+                {% if product.in_stock %}
+                    {% if product.is_cake %}
+                    <a href="{% url 'orders:customize_cake' product_id=product.id %}" 
+                       class="bg-amber-500 hover:bg-amber-600 text-white text-center px-3 py-2 rounded-lg transition duration-200 text-sm">
+                        Customize Order
+                    </a>
+                    {% else %}
+                    <form method="post" action="{% url 'cart:cart_add' product.id %}" class="add-to-cart-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="override" value="false">
+                        <input type="hidden" name="quantity" value="1">
+                        <button type="submit" 
+                                class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg transition duration-200 text-sm add-to-cart-btn">
+                            Add to Cart
+                        </button>
+                    </form>
+                    {% endif %}
+                {% else %}
+                    <span class="text-sm text-gray-500">Out of Stock</span>
+                {% endif %}
+            {% else %}
+                <a href="{% url 'users:login' %}?next={{ request.path }}" 
+                   class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition duration-200 text-sm">
+                    Login to Order
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
