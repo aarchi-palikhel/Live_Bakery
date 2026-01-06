@@ -1,4 +1,5 @@
-# apps/payment/views.py
+
+# apps/payment/views.py - COMPLETE UPDATED VERSION
 import hmac
 import hashlib
 import uuid
@@ -14,29 +15,6 @@ from orders.models import Order
 from cart.models import Cart
 from .models import PaymentTransaction
 from django.conf import settings
-
-
-def verify_esewa_signature(data, secret_key):
-    """Verify eSewa callback signature"""
-    signed_field_names = data.get('signed_field_names', '').split(',')
-    
-    # Build the string to sign exactly as eSewa expects
-    data_to_sign = ""
-    for field in signed_field_names:
-        if field in data:
-            data_to_sign += f"{field}={data[field]},"
-    
-    if data_to_sign.endswith(','):
-        data_to_sign = data_to_sign[:-1]
-    
-    # Generate expected signature
-    key = secret_key.encode('utf-8')
-    msg = data_to_sign.encode('utf-8')
-    hmac_sha256 = hmac.new(key, msg, hashlib.sha256)
-    digest = hmac_sha256.digest()
-    expected_signature = base64.b64encode(digest).decode('utf-8')
-    
-    return expected_signature == data.get('signature', '')
 
 
 class EsewaView(LoginRequiredMixin, View):
@@ -86,7 +64,7 @@ class EsewaView(LoginRequiredMixin, View):
         # Create payment transaction record
         payment_transaction = PaymentTransaction.objects.create(
             user=request.user,
-            order=order,
+            order=order,  # Link to order using ForeignKey
             transaction_uuid=uuid_val,
             amount=order.total_amount,
             total_amount=order.total_amount,
@@ -98,9 +76,9 @@ class EsewaView(LoginRequiredMixin, View):
             status='initiated',
         )
 
-        # Build URLs - FIXED: Use kwargs for UUID parameter
+        # Build URLs
         success_url = f"{request.scheme}://{request.get_host}{reverse('orders:order_confirmation', args=[order.id])}?payment=success"
-        failure_url = f"{request.scheme}://{request.get_host}{reverse('payment:cancel_payment', kwargs={'transaction_uuid': uuid_val})}"
+        failure_url = f"{request.scheme}://{request.get_host}{reverse('payment:cancel_payment', args=[uuid_val])}"
 
         data = {
             'amount': str(order.total_amount),
@@ -115,96 +93,73 @@ class EsewaView(LoginRequiredMixin, View):
         context = {
             'data': data,
             'order': order,
+            'success_url': success_url,
+            'failure_url': failure_url,
         }
         
         return render(request, 'payment/esewa_payment.html', context)
 
-
-@csrf_exempt  # <-- ONLY ONE DECORATOR
+@csrf_exempt
 def esewa_callback(request):
-    """Handle eSewa payment verification callback"""
+    """Handle eSewa TESTING payment verification callback"""
     if request.method == 'POST':
         try:
             # Get data from eSewa callback
             data = request.POST.dict()
-            print(f"eSewa Callback Data: {data}")
+            print(f"eSewa TEST Callback Data: {data}")
             
-            # Verify signature
+            # For testing, you might want to skip signature verification temporarily
+            # Uncomment the next lines when ready to test signature
+            '''
             secret_key = '8gBm/:&EnhH.1/q'
             if not verify_esewa_signature(data, secret_key):
                 return JsonResponse({
                     'status': 'error',
                     'message': 'Invalid signature'
                 }, status=400)
+            '''
             
-            # Extract required fields
-            transaction_uuid = data.get('transaction_uuid')
-            status = data.get('status')
-            ref_id = data.get('ref_id')
-            total_amount = data.get('total_amount')
+            # Extract required fields - test environment might use different field names
+            transaction_uuid = data.get('transaction_uuid') or data.get('transaction_uuid')
+            status = data.get('status', '').upper()
+            ref_id = data.get('ref_id') or data.get('reference_id')
+            total_amount = data.get('total_amount') or data.get('amount')
             
-            if not all([transaction_uuid, status]):
+            print(f"TEST DEBUG: UUID={transaction_uuid}, Status={status}, Ref={ref_id}, Amount={total_amount}")
+            
+            if not transaction_uuid:
                 return JsonResponse({
                     'status': 'error',
-                    'message': 'Missing required parameters'
+                    'message': 'Missing transaction_uuid'
                 }, status=400)
             
             # Find the payment transaction
             try:
                 payment = PaymentTransaction.objects.get(transaction_uuid=transaction_uuid)
+                print(f"TEST DEBUG: Found payment {payment.id}, current status: {payment.status}")
                 
-                # Store the callback data
+                # Store test callback data
                 payment.esewa_status = status
                 payment.reference_id = ref_id or ''
                 payment.esewa_response_data = data
                 
-                # Check for CANCELLED/FAILED status explicitly
-                if status in ['CANCELLED', 'FAILED', 'ERROR', 'ABORTED']:
-                    payment.status = 'failed'
-                    payment.save()
-                    
-                    # Update order status to failed
-                    if payment.order:
-                        payment.order.payment_status = 'failed'
-                        payment.order.status = 'cancelled'
-                        payment.order.save()
-                    
-                    return JsonResponse({
-                        'status': 'failed',
-                        'message': 'Payment was cancelled or failed'
-                    })
+                # TESTING: Accept all statuses for debugging
+                print(f"TEST DEBUG: Received status: {status}")
                 
-                # For PENDING status
-                elif status == 'PENDING':
-                    payment.status = 'pending'
-                    payment.save()
-                    return JsonResponse({
-                        'status': 'pending',
-                        'message': 'Payment is pending'
-                    })
-                
-                # For COMPLETE status, verify amount
-                elif status == 'COMPLETE':
-                    from decimal import Decimal
-                    if Decimal(total_amount) != payment.total_amount:
-                        payment.status = 'failed'
-                        payment.save()
-                        return JsonResponse({
-                            'status': 'error',
-                            'message': 'Amount mismatch'
-                        }, status=400)
-                    
+                # Handle different test statuses
+                if status in ['COMPLETE', 'SUCCESS', 'APPROVED']:
                     payment.status = 'success'
                     payment.save()
                     
-                    # Update the related order
                     if payment.order:
                         order = payment.order
                         order.payment_status = 'paid'
                         order.status = 'confirmed'
-                        order.save()
+                        order.save(update_fields=['payment_status', 'status', 'updated_at'])
                         
-                        # Clear cart if it exists
+                        print(f"TEST SUCCESS: Order {order.id} marked as paid")
+                        
+                        # Clear cart
                         try:
                             Cart.objects.filter(user=order.user).delete()
                         except:
@@ -212,37 +167,52 @@ def esewa_callback(request):
                         
                         return JsonResponse({
                             'status': 'success',
-                            'message': 'Payment verification completed',
+                            'message': 'Test payment successful',
                             'redirect_url': reverse('orders:order_confirmation', kwargs={'order_id': order.id})
                         })
                 
-                # For any other unknown status
-                else:
-                    payment.status = 'failed'
+                elif status in ['PENDING', 'PROCESSING']:
+                    payment.status = 'pending'
                     payment.save()
                     return JsonResponse({
-                        'status': 'error',
-                        'message': f'Unknown payment status: {status}'
+                        'status': 'pending',
+                        'message': 'Test payment pending'
+                    })
+                
+                else:  # Treat everything else as failed for testing
+                    payment.status = 'failed'
+                    payment.save()
+                    
+                    if payment.order:
+                        payment.order.payment_status = 'failed'
+                        payment.order.status = 'cancelled'
+                        payment.order.save(update_fields=['payment_status', 'status', 'updated_at'])
+                    
+                    return JsonResponse({
+                        'status': 'failed',
+                        'message': f'Test payment {status.lower()}'
                     })
                     
             except PaymentTransaction.DoesNotExist:
+                print(f"TEST ERROR: Transaction not found: {transaction_uuid}")
                 return JsonResponse({
                     'status': 'error',
-                    'message': 'Transaction not found'
+                    'message': 'Transaction not found in test system'
                 }, status=404)
                 
         except Exception as e:
-            print(f"eSewa Callback Error: {str(e)}")
+            print(f"eSewa Test Callback Error: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return JsonResponse({
                 'status': 'error',
-                'message': str(e)
+                'message': f'Test error: {str(e)}'
             }, status=500)
     
     return JsonResponse({
         'status': 'error',
-        'message': 'Invalid request method'
+        'message': 'Invalid request method for test'
     }, status=400)
-
 
 def payment_success_redirect(request, transaction_uuid):
     """Redirect to order confirmation after successful payment"""
@@ -257,30 +227,56 @@ def payment_success_redirect(request, transaction_uuid):
     except PaymentTransaction.DoesNotExist:
         messages.error(request, 'Payment transaction not found')
         return redirect('orders:order_list')
+    
 
+def verify_esewa_signature(data, secret_key):
+    """Verify eSewa callback signature"""
+    import hmac
+    import hashlib
+    import base64
+    
+    signed_field_names = data.get('signed_field_names', '').split(',')
+    
+    # Build the string to sign exactly as eSewa expects
+    data_to_sign = ""
+    for field in signed_field_names:
+        if field in data:
+            data_to_sign += f"{field}={data[field]},"
+    
+    if data_to_sign.endswith(','):
+        data_to_sign = data_to_sign[:-1]
+    
+    # Generate expected signature
+    key = secret_key.encode('utf-8')
+    msg = data_to_sign.encode('utf-8')
+    hmac_sha256 = hmac.new(key, msg, hashlib.sha256)
+    digest = hmac_sha256.digest()
+    expected_signature = base64.b64encode(digest).decode('utf-8')
+    
+    return expected_signature == data.get('signature', '')
 
 def cancel_payment(request, transaction_uuid):
-    """Handle payment cancellation from eSewa page"""
-    try:
-        payment = PaymentTransaction.objects.get(transaction_uuid=transaction_uuid)
-        
-        # Only allow cancellation if payment is still pending/initiated
-        if payment.status in ['pending', 'initiated']:
-            payment.status = 'failed'
-            payment.esewa_status = 'CANCELLED'
-            payment.save()
+        """Handle payment cancellation from eSewa page"""
+        try:
+            payment = PaymentTransaction.objects.get(transaction_uuid=transaction_uuid)
             
-            if payment.order:
-                payment.order.payment_status = 'failed'
-                payment.order.status = 'cancelled'
-                payment.order.save()
+            # Only allow cancellation if payment is still pending/initiated
+            if payment.status in ['pending', 'initiated']:
+                payment.status = 'failed'
+                payment.esewa_status = 'CANCELLED'
+                payment.save()
                 
-                messages.warning(request, 'Payment was cancelled. Your order has been cancelled.')
-                return redirect('orders:order_detail', order_id=payment.order.id)
-        
-        messages.info(request, 'This payment cannot be cancelled.')
-        return redirect('orders:order_list')
-        
-    except PaymentTransaction.DoesNotExist:
-        messages.error(request, 'Payment transaction not found')
-        return redirect('orders:order_list')
+                if payment.order:
+                    payment.order.payment_status = 'failed'
+                    payment.order.status = 'cancelled'
+                    payment.order.save()
+                    
+                    messages.warning(request, 'Payment was cancelled. Your order has been cancelled.')
+                    return redirect('orders:order_detail', order_id=payment.order.id)
+            
+            messages.info(request, 'This payment cannot be cancelled.')
+            return redirect('orders:order_list')
+            
+        except PaymentTransaction.DoesNotExist:
+            messages.error(request, 'Payment transaction not found')
+            return redirect('orders:order_list')

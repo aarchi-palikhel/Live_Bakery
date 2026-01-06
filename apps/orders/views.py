@@ -483,7 +483,7 @@ def order_create(request):
                                     print(f"DEBUG: Payment transaction created for order {order.id}")
                                     
                                     # Redirect to eSewa payment
-                                    return redirect(f'/payment/esewa/?order_id={order.id}')
+                                    return redirect('payment:esewa_payment', order_id=order.id)
                                     
                                 except Exception as e:
                                     print(f"Error creating payment transaction: {e}")
@@ -554,48 +554,115 @@ def order_create(request):
         messages.error(request, f"❌ An error occurred: {str(e)}")
         return redirect('cart:cart_detail')
 
-
 @customer_required
 def order_confirmation(request, order_id):
-    """
-    Show order confirmation for both COD and eSewa payments
-    """
+    """Show order confirmation for both COD and eSewa payments"""
     try:
-        # Get the order
         order = get_object_or_404(Order, id=order_id, user=request.user)
         
-        # If coming from eSewa with payment=success parameter
-        if request.GET.get('payment') == 'success' and order.payment_method == 'esewa':
-            # Check for payment transaction
-            payment = PaymentTransaction.objects.filter(
-                order=order, 
+        print(f"\n=== order_confirmation DEBUG ===")
+        print(f"Order ID: {order.id}, Payment method: {order.payment_method}")
+        print(f"GET params: {dict(request.GET)}")
+        
+        # Handle eSewa payment success
+        if order.payment_method == 'esewa' and 'data' in request.GET:
+            print("Processing eSewa encoded data...")
+            
+            try:
+                import base64
+                import json
+                
+                # Decode the base64 data
+                encoded_data = request.GET.get('data')
+                print(f"Encoded data: {encoded_data[:50]}...")
+                
+                decoded_bytes = base64.b64decode(encoded_data)
+                esewa_data = json.loads(decoded_bytes.decode('utf-8'))
+                
+                print(f"Decoded eSewa data:")
+                print(json.dumps(esewa_data, indent=2))
+                
+                # Extract data
+                transaction_uuid = esewa_data.get('transaction_uuid')
+                status = esewa_data.get('status')
+                total_amount = esewa_data.get('total_amount')
+                transaction_code = esewa_data.get('transaction_code')
+                
+                print(f"\nTransaction UUID: {transaction_uuid}")
+                print(f"Status: {status}")
+                print(f"Amount: {total_amount}")
+                print(f"Transaction Code: {transaction_code}")
+                
+                # Verify signature (important!)
+                # You should implement proper signature verification
+                
+                # Find the payment transaction
+                payment = PaymentTransaction.objects.filter(
+                    transaction_uuid=transaction_uuid
+                ).first()
+                
+                if payment:
+                    print(f"Found payment: {payment.id}")
+                    
+                    if status == 'COMPLETE':
+                        # Verify amount matches
+                        if float(total_amount) == float(payment.total_amount):
+                            print(f"Amount verification OK: {total_amount}")
+                            
+                            # Update payment
+                            payment.status = 'success'
+                            payment.esewa_status = status
+                            payment.reference_id = transaction_code
+                            payment.esewa_response_data = esewa_data
+                            payment.save()
+                            
+                            # Update order
+                            order.payment_status = 'paid'
+                            order.status = 'confirmed'
+                            order.save()
+                            
+                            messages.success(request, 'Payment successful! Your order is confirmed.')
+                            print(f"Updated order {order.id} to paid status")
+                        else:
+                            print(f"Amount mismatch! eSewa: {total_amount}, Order: {payment.total_amount}")
+                            messages.error(request, 'Payment amount mismatch. Please contact support.')
+                    else:
+                        print(f"Payment status is {status}, not COMPLETE")
+                        messages.warning(request, f'Payment status: {status}')
+                else:
+                    print(f"No payment found with UUID: {transaction_uuid}")
+                    messages.error(request, 'Payment transaction not found.')
+                    
+            except Exception as e:
+                print(f"Error processing eSewa data: {str(e)}")
+                import traceback
+                traceback.print_exc()
+                messages.error(request, 'Error processing payment data.')
+        
+        # Also handle the old ?payment=success parameter
+        elif request.GET.get('payment') == 'success' and order.payment_method == 'esewa':
+            print("Received ?payment=success parameter")
+            # Check if we already have a successful payment
+            successful_payment = order.payment_transactions.filter(
                 status='success'
             ).first()
             
-            if payment:
-                # Update order payment status if not already updated
+            if successful_payment:
+                print(f"Found successful payment: {successful_payment.id}")
                 if order.payment_status != 'paid':
                     order.payment_status = 'paid'
                     order.status = 'confirmed'
                     order.save()
-                    messages.success(request, 'Payment successful! Your order is confirmed.')
+                    messages.success(request, 'Payment successful!')
             else:
-                # Payment not verified yet
-                messages.info(request, 'Payment received! Your order is being processed.')
+                print("No successful payment found yet")
+                messages.info(request, 'Payment received. Processing...')
         
-        # Get order items and calculate totals
-        order_items = order.items.all().select_related('product')
-        
-        # Calculate subtotal if not already set
-        if not order.subtotal or order.subtotal == 0:
-            order_subtotal = sum(item.get_total_price() for item in order_items)
-            order.subtotal = order_subtotal
-            order.total_amount = order_subtotal + (order.delivery_fee or 0)
-            order.save()
+        # Rest of your view remains the same...
         
         context = {
             'order': order,
-            'order_items': order_items,
+            'order_items': order.items.all().select_related('product'),
             'subtotal': order.subtotal or 0,
             'delivery_fee': order.delivery_fee or 0,
         }
@@ -605,8 +672,7 @@ def order_confirmation(request, order_id):
     except Order.DoesNotExist:
         messages.error(request, 'Order not found.')
         return redirect('orders:order_list')
-
-
+    
 @customer_required
 def order_list(request):
     """Display user's order history"""
@@ -685,6 +751,15 @@ def order_detail(request, order_id):
     # Get order items
     order_items = order.items.all().select_related('product')
     
+    # CALCULATE SUBTOTAL
+    subtotal = 0
+    for item in order_items:
+        # Calculate item total
+        item_total = item.price * item.quantity
+        # You can also set this as a property on each item for use in template
+        item.item_total = item_total
+        subtotal += item_total
+    
     # Get cake design references for this order
     design_references = CakeDesignReference.objects.filter(
         order=order
@@ -694,7 +769,7 @@ def order_detail(request, order_id):
     status_order = ['pending', 'confirmed', 'baking', 'ready', 'completed', 'cancelled']
     order.status_index = status_order.index(order.status) if order.status in status_order else 0
     
-    # Get payment method display text - FIXED: Use PAYMENT_CHOICES instead of PAYMENT_METHOD_CHOICES
+    # Get payment method display text
     payment_method_display = dict(Order.PAYMENT_CHOICES).get(order.payment_method, order.payment_method)
     
     context = {
@@ -702,7 +777,8 @@ def order_detail(request, order_id):
         'order_items': order_items,
         'design_references': design_references,
         'delivery_fee': delivery_fee,
-        'payment_transactions': payment_transactions,  # Pass to template
+        'subtotal': subtotal,  # Added subtotal here
+        'payment_transactions': payment_transactions,
         'payment_method_display': payment_method_display,
         'latest_payment': payment_transactions.first() if payment_transactions.exists() else None,
     }

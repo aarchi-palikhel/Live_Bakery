@@ -37,11 +37,15 @@
                         </span>
                     </p>
                     <p><span class="font-medium text-gray-700">Payment Method:</span> {{ order.get_payment_method_display }}</p>
+                    <!-- Replace the existing payment status section with: -->
                     <p><span class="font-medium text-gray-700">Payment Status:</span> 
                         <span class="px-2 py-1 rounded-full text-xs font-medium 
-                            {% if order.payment_status == 'paid' %}bg-green-100 text-green-800
+                            {% if order.payment_status == 'paid' or order.payment_status == True %}bg-green-100 text-green-800
+                            {% elif order.payment_status == 'failed' or order.payment_status == 'cancelled' %}bg-red-100 text-red-800
                             {% else %}bg-yellow-100 text-yellow-800{% endif %}">
-                            {{ order.get_payment_status_display }}
+                            {% if order.payment_status == 'paid' or order.payment_status == True %}Paid
+                            {% elif order.payment_status == 'failed' or order.payment_status == 'cancelled' %}Failed/Cancelled
+                            {% else %}Pending{% endif %}
                         </span>
                     </p>
                 </div>

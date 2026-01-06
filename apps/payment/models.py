@@ -20,14 +20,12 @@ class PaymentTransaction(models.Model):
         related_name='payments'
     )
     
-    # Direct foreign key to Order
     order = models.ForeignKey(
-        'orders.Order',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='payment_transactions'
-    )
+    'orders.Order',
+    on_delete=models.CASCADE,  # Use CASCADE instead of SET_NULL
+    related_name='payment_transactions'
+    # REMOVE null=True, blank=True
+)
     
     transaction_uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     

@@ -69,11 +69,21 @@
                                 <div class="flex justify-between">
                                     <div>
                                         <h3 class="font-semibold text-gray-800">{{ item.product.name }}</h3>
-                                        <p class="text-sm text-gray-600 font-medium">Quantity: {{ item.quantity }}</p>
-                                        <p class="text-sm text-gray-600 font-medium">Price: Rs. {{ item.price }}</p>
+                                        <div class="mt-1 space-y-1">
+                                            <p class="text-sm text-gray-600">
+                                                <span class="font-medium">Quantity:</span> {{ item.quantity }}
+                                            </p>
+                                            <p class="text-sm text-gray-600">
+                                                <span class="font-medium">Unit Price:</span> Rs. {{ item.price }}
+                                            </p>
+                                        </div>
                                         
                                         {% if item.is_cake %}
                                         <div class="mt-2 space-y-1">
+                                            {% if item.cake_flavor %}
+                                            <p class="text-sm text-gray-600 font-medium">Flavor: {{ item.display_flavor }}</p>
+                                            {% endif %}
+                                            
                                             {% if item.cake_weight %}
                                             <p class="text-sm text-gray-600 font-medium">Weight: 
                                                 {% if item.cake_weight == 'custom' and item.cake_custom_weight %}
@@ -103,7 +113,7 @@
                                         {% endif %}
                                     </div>
                                     <div class="text-right">
-                                        <p class="font-semibold text-gray-800">Rs. {{ item.total_price }}</p>
+                                        <p class="font-semibold text-gray-800">Rs. {{ item.get_total_price }}</p>
                                     </div>
                                 </div>
                                 
@@ -122,104 +132,104 @@
                 </div>
             </div>
 
-        <!-- Status Timeline - Horizontal Version -->
-        <div class="bg-white rounded-lg shadow mt-6">
-            <div class="p-6 border-b border-gray-200">
-                <h2 class="text-xl font-bold text-gray-800">Order Status Timeline</h2>
-            </div>
-            <div class="p-6">
-                <div class="relative">
-                    <!-- Progress bar -->
-                    <div class="absolute top-1/2 left-0 right-0 h-1 bg-gray-200 -translate-y-1/2"></div>
-                    <!-- Dynamic progress bar -->
-                    <div class="absolute top-1/2 left-0 h-2 
-                        {% if order.status == 'cancelled' %}bg-red-500{% else %}bg-green-500{% endif %} 
-                        -translate-y-1/2 rounded-full transition-all duration-500
-                        {% if order.status == 'pending' %}w-1/5
-                        {% elif order.status == 'confirmed' %}w-2/5
-                        {% elif order.status == 'baking' %}w-3/5
-                        {% elif order.status == 'ready' %}w-4/5
-                        {% elif order.status == 'completed' %}w-full
-                        {% elif order.status == 'cancelled' %}w-full
-                        {% else %}w-0{% endif %}">
+            <!-- Status Timeline - Horizontal Version -->
+            <div class="bg-white rounded-lg shadow mt-6">
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-xl font-bold text-gray-800">Order Status Timeline</h2>
+                </div>
+                <div class="p-6">
+                    <div class="relative">
+                        <!-- Progress bar -->
+                        <div class="absolute top-1/2 left-0 right-0 h-1 bg-gray-200 -translate-y-1/2"></div>
+                        <!-- Dynamic progress bar -->
+                        <div class="absolute top-1/2 left-0 h-2 
+                            {% if order.status == 'cancelled' %}bg-red-500{% else %}bg-green-500{% endif %} 
+                            -translate-y-1/2 rounded-full transition-all duration-500
+                            {% if order.status == 'pending' %}w-1/5
+                            {% elif order.status == 'confirmed' %}w-2/5
+                            {% elif order.status == 'baking' %}w-3/5
+                            {% elif order.status == 'ready' %}w-4/5
+                            {% elif order.status == 'completed' %}w-full
+                            {% elif order.status == 'cancelled' %}w-full
+                            {% else %}w-0{% endif %}">
+                        </div>
+                        
+                        <!-- Status steps -->
+                        <div class="relative flex justify-between">
+                            {% with status_order="pending confirmed baking ready completed cancelled" %}
+                            {% with status_display="Pending Confirmed Baking Ready Completed Cancelled" %}
+                            {% with status_icons="⏳ 👍🏻 🧁 📦 ✅ ❌" %}
+                            
+                            {% for status in status_order.split %}
+                                {% with current_index=forloop.counter0 %}
+                                <div class="flex flex-col items-center">
+                                    <!-- Status circle - REMOVED background colors -->
+                                    <div class="w-12 h-12 rounded-full flex items-center justify-center mb-2 relative z-10">
+                                        {% if order.status == 'cancelled' and status == 'cancelled' %}
+                                            <span class="text-3xl {% if order.status == 'cancelled' %}text-red-600{% else %}text-gray-800{% endif %}">
+                                                {{ status_icons.split|index:current_index }}
+                                            </span>
+                                        {% elif order.status == status %}
+                                            <span class="text-3xl {% if order.status == 'cancelled' %}text-red-600{% else %}text-green-600{% endif %}">
+                                                {{ status_icons.split|index:current_index }}
+                                            </span>
+                                        {% elif order.status_index >= current_index and order.status != 'cancelled' %}
+                                            <span class="text-3xl text-green-600">
+                                                {{ status_icons.split|index:current_index }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-2xl text-gray-400">
+                                                {{ status_icons.split|index:current_index }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    <br>
+                                    <!-- Status label -->
+                                    <div class="text-center">
+                                        <p class="text-sm font-medium text-gray-800">{{ status_display.split|index:current_index }}</p>
+                                        {% if order.status == status %}
+                                        <p class="text-xs text-gray-500 mt-1">Current Status</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endwith %}
+                            {% endfor %}
+                            
+                            {% endwith %}
+                            {% endwith %}
+                            {% endwith %}
+                        </div>
                     </div>
                     
-                    <!-- Status steps -->
-                    <div class="relative flex justify-between">
-                        {% with status_order="pending confirmed baking ready completed cancelled" %}
-                        {% with status_display="Pending Confirmed Baking Ready Completed Cancelled" %}
-                        {% with status_icons="⏳ 👍🏻 🧁 📦 ✅ ❌" %}
-                        
-                        {% for status in status_order.split %}
-                            {% with current_index=forloop.counter0 %}
-                            <div class="flex flex-col items-center">
-                                <!-- Status circle - REMOVED background colors -->
-                                <div class="w-12 h-12 rounded-full flex items-center justify-center mb-2 relative z-10">
-                                    {% if order.status == 'cancelled' and status == 'cancelled' %}
-                                        <span class="text-3xl {% if order.status == 'cancelled' %}text-red-600{% else %}text-gray-800{% endif %}">
-                                            {{ status_icons.split|index:current_index }}
-                                        </span>
-                                    {% elif order.status == status %}
-                                        <span class="text-3xl {% if order.status == 'cancelled' %}text-red-600{% else %}text-green-600{% endif %}">
-                                            {{ status_icons.split|index:current_index }}
-                                        </span>
-                                    {% elif order.status_index >= current_index and order.status != 'cancelled' %}
-                                        <span class="text-3xl text-green-600">
-                                            {{ status_icons.split|index:current_index }}
-                                        </span>
-                                    {% else %}
-                                        <span class="text-2xl text-gray-400">
-                                            {{ status_icons.split|index:current_index }}
-                                        </span>
+                    <!-- Current status details -->
+                    <div class="mt-8 p-4 bg-gray-50 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="font-semibold text-gray-800">Current Status: {{ order.get_status_display }}</h3>
+                                <p class="text-sm text-gray-600 mt-1">
+                                    {% if order.status == 'pending' %}
+                                    Your order has been received and is being reviewed.
+                                    {% elif order.status == 'confirmed' %}
+                                    Your order has been confirmed and is being prepared.
+                                    {% elif order.status == 'baking' %}
+                                    Your items are currently being baked.
+                                    {% elif order.status == 'ready' %}
+                                    Your order is ready for pickup/delivery.
+                                    {% elif order.status == 'completed' %}
+                                    Your order has been successfully delivered.
+                                    {% elif order.status == 'cancelled' %}
+                                    This order has been cancelled.
                                     {% endif %}
-                                </div>
-                                <br>
-                                <!-- Status label -->
-                                <div class="text-center">
-                                    <p class="text-sm font-medium text-gray-800">{{ status_display.split|index:current_index }}</p>
-                                    {% if order.status == status %}
-                                    <p class="text-xs text-gray-500 mt-1">Current Status</p>
-                                    {% endif %}
-                                </div>
+                                </p>
                             </div>
-                            {% endwith %}
-                        {% endfor %}
-                        
-                        {% endwith %}
-                        {% endwith %}
-                        {% endwith %}
-                    </div>
-                </div>
-                
-                <!-- Current status details -->
-                <div class="mt-8 p-4 bg-gray-50 rounded-lg">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h3 class="font-semibold text-gray-800">Current Status: {{ order.get_status_display }}</h3>
-                            <p class="text-sm text-gray-600 mt-1">
-                                {% if order.status == 'pending' %}
-                                Your order has been received and is being reviewed.
-                                {% elif order.status == 'confirmed' %}
-                                Your order has been confirmed and is being prepared.
-                                {% elif order.status == 'baking' %}
-                                Your items are currently being baked.
-                                {% elif order.status == 'ready' %}
-                                Your order is ready for pickup/delivery.
-                                {% elif order.status == 'completed' %}
-                                Your order has been successfully delivered.
-                                {% elif order.status == 'cancelled' %}
-                                This order has been cancelled.
-                                {% endif %}
-                            </p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-sm text-gray-600">Last updated</p>
-                            <p class="font-medium text-gray-800">{{ order.updated_at|date:"M d, Y g:i A" }}</p>
+                            <div class="text-right">
+                                <p class="text-sm text-gray-600">Last updated</p>
+                                <p class="font-medium text-gray-800">{{ order.updated_at|date:"M d, Y g:i A" }}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
             <!-- Design References (for cakes) -->
             {% if design_references %}
@@ -286,9 +296,22 @@
                             <h3 class="font-semibold text-gray-800 mb-2">Delivery Information</h3>
                             <div class="space-y-2">
                                 <p class="text-sm">
+                                    <span class="text-gray-600">Type:</span>
+                                    <span class="font-medium ml-2">{{ order.get_delivery_type_display }}</span>
+                                </p>
+                                
+                                {% if order.delivery_type == 'delivery' %}
+                                <p class="text-sm">
                                     <span class="text-gray-600">Address:</span>
                                     <span class="font-medium ml-2 block mt-1">{{ order.delivery_address }}</span>
                                 </p>
+                                {% else %}
+                                <p class="text-sm">
+                                    <span class="text-gray-600">Pickup Location:</span>
+                                    <span class="font-medium ml-2">Live Bakery, Kamalbinayak, Bhaktapur</span>
+                                </p>
+                                {% endif %}
+                                
                                 <p class="text-sm">
                                     <span class="text-gray-600">Phone:</span>
                                     <span class="font-medium ml-2">{{ order.phone_number }}</span>
@@ -302,7 +325,7 @@
                             </div>
                         </div>
 
-                        <!-- Payment Info - UPDATED FIX -->
+                        <!-- Payment Info -->
                         <div class="pt-4 border-t border-gray-200">
                             <h3 class="font-semibold text-gray-800 mb-2">Payment Information</h3>
                             <div class="space-y-2">
@@ -362,20 +385,33 @@
                         <div class="pt-4 border-t border-gray-200">
                             <h3 class="font-semibold text-gray-800 mb-2">Order Total</h3>
                             <div class="space-y-2">
+                                <!-- Delivery Type -->
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Delivery Type</span>
+                                    <span class="font-medium">
+                                        {{ order.get_delivery_type_display }}
+                                    </span>
+                                </div>
+                                
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600">Subtotal</span>
-                                    <span class="font-medium">Rs. {{ order.total_amount|add:"-delivery_fee" }}</span>
+                                    <span class="font-medium">Rs. {{ order.subtotal }}</span>
                                 </div>
+                                
+                                <!-- Only show delivery fee if delivery type is 'delivery' -->
+                                {% if order.delivery_type == 'delivery' %}
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600">Delivery Fee</span>
                                     <span class="font-medium">
-                                        {% if delivery_fee == 0 %}
+                                        {% if order.delivery_fee == 0 %}
                                         <span class="text-green-600">Free</span>
                                         {% else %}
-                                        Rs. {{ delivery_fee }}
+                                        Rs. {{ order.delivery_fee }}
                                         {% endif %}
                                     </span>
                                 </div>
+                                {% endif %}
+                                
                                 <div class="flex justify-between text-lg font-bold pt-2 border-t border-gray-200">
                                     <span>Total</span>
                                     <span class="text-[#8f3232]">Rs. {{ order.total_amount }}</span>
