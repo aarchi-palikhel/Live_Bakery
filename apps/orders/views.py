@@ -14,7 +14,6 @@ from products.models import Product
 from .models import Order, OrderItem, CakeDesignReference
 from .forms import OrderCreateForm, CakeCustomizationForm, CheckoutCakeCustomizationForm
 from users.decoraters import customer_required
-from django_esewa import EsewaPayment
 import uuid
 from django.conf import settings
 from payment.models import PaymentTransaction
