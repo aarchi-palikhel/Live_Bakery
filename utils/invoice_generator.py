@@ -188,8 +188,18 @@ class InvoiceGenerator:
                 f"Rs. {item_total:.2f}"
             ])
         
-        # Calculate delivery fee
-        delivery_fee = 200 if self.order.delivery_type == 'delivery' else 0
+        # Calculate delivery fee based on location
+        delivery_fee = 0
+        if self.order.delivery_type == 'delivery':
+            delivery_address = self.order.delivery_address.lower()
+            
+            if 'kamalbinayak' in delivery_address:
+                delivery_fee = 20
+            elif 'bhaktapur' in delivery_address:
+                delivery_fee = 50
+            else:
+                delivery_fee = 100
+        
         grand_total = subtotal + delivery_fee
         
         # Add summary rows with less spacing
@@ -202,7 +212,7 @@ class InvoiceGenerator:
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#8f3232')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 9),  # Reduced from 10
+            ('FONTSIZE', (0, 0), (-1, 0), 9),  
             ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 6),  # Reduced from 8
             
@@ -246,11 +256,11 @@ class InvoiceGenerator:
             ParagraphStyle(
                 'DeliveryInfo',
                 parent=self.styles['Normal'],
-                fontSize=8,  # Reduced from 9
-                leading=10,  # Reduced from 11
-                spaceBefore=6,  # Reduced from 8
-                spaceAfter=6,  # Reduced from 8
-                leftIndent=5,  # Reduced from 10
+                fontSize=8,  
+                leading=10,  
+                spaceBefore=6, 
+                spaceAfter=6,  
+                leftIndent=5,  
                 textColor=colors.darkslategray
             )
         )
