@@ -123,7 +123,7 @@
     </div>
 
     <!-- Mobile Menu -->
-    <div class="lg:hidden hidden bg-[#8a2f2f] border-t border-[#7a2a2a]" id="mobile-menu">
+    <div class="lg:hidden bg-[#8a2f2f] border-t border-[#7a2a2a]" id="mobile-menu" style="display: none;">
         <div class="px-4 pt-2 pb-4 space-y-1">
             <a href="{% url 'core:home' %}"
                 class="block px-3 py-2 rounded-md text-sm sm:text-base font-medium text-[#eec1ad] hover:text-white hover:bg-[#7a2a2a] transition duration-200">Home</a>
@@ -173,28 +173,23 @@
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenu = document.getElementById('mobile-menu');
 
-        // Mobile menu toggle
-        if (mobileMenuBtn) {
-            mobileMenuBtn.addEventListener('click', function () {
-                const isHidden = mobileMenu.classList.contains('hidden');
-                if (isHidden) {
-                    mobileMenu.classList.remove('hidden');
-                    this.setAttribute('aria-expanded', 'true');
-                } else {
-                    mobileMenu.classList.add('hidden');
-                    this.setAttribute('aria-expanded', 'false');
-                }
+        if (mobileMenuBtn && mobileMenu) {
+            mobileMenuBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                const isHidden = mobileMenu.style.display === 'none';
+                mobileMenu.style.display = isHidden ? 'block' : 'none';
+                this.setAttribute('aria-expanded', isHidden);
+            });
+
+            // Close mobile menu when clicking on a link
+            const mobileLinks = mobileMenu.querySelectorAll('a');
+            mobileLinks.forEach(link => {
+                link.addEventListener('click', function () {
+                    mobileMenu.style.display = 'none';
+                    mobileMenuBtn.setAttribute('aria-expanded', 'false');
+                });
             });
         }
-
-        // Close mobile menu when clicking on a link
-        const mobileLinks = mobileMenu?.querySelectorAll('a');
-        mobileLinks?.forEach(link => {
-            link.addEventListener('click', function () {
-                mobileMenu.classList.add('hidden');
-                mobileMenuBtn.setAttribute('aria-expanded', 'false');
-            });
-        });
     });
 
     // Update cart count function

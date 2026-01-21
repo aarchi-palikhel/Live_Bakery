@@ -184,7 +184,52 @@
     </div>
 </section>
 
-<script src="{% static 'js/home.js' %}"></script>
+<script>
+// Handle Add to Cart with AJAX for home page
+document.querySelectorAll('.add-to-cart-form-home').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const productId = this.getAttribute('data-product-id');
+        const quantity = this.querySelector('input[name="quantity"]').value;
+        const csrfToken = this.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        const formData = new FormData();
+        formData.append('quantity', quantity);
+        formData.append('override', 'false');
+        
+        fetch(`/cart/add/${productId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess(data.message, 3000);
+                
+                // Dispatch custom event for navbar - THIS WILL TRIGGER ONCE
+                document.dispatchEvent(new CustomEvent('cartUpdated', {
+                    detail: {
+                        total_items: data.total_items,
+                        total_price: data.total_price
+                    }
+                }));
+                // REMOVE updateCartCountFromAPI() call from here
+            } else {
+                showError(data.message || 'Failed to add product to cart', 4000);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showError('An error occurred. Please try again.', 4000);
+        });
+    });
+});
+</script>
 
 <style>
 @keyframes slide-in {

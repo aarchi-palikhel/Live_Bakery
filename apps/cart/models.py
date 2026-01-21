@@ -52,7 +52,19 @@ class CartItem(models.Model):
 
     class Meta:
         ordering = ['-added_at']  
-        unique_together = ['cart', 'product', 'cake_customization']
+        # CHANGED: Only require unique together for non-null cake_customization
+        constraints = [
+            models.UniqueConstraint(
+                fields=['cart', 'product', 'cake_customization'],
+                name='unique_cart_product_customization',
+                condition=models.Q(cake_customization__isnull=False)
+            ),
+            models.UniqueConstraint(
+                fields=['cart', 'product'],
+                name='unique_cart_product',
+                condition=models.Q(cake_customization__isnull=True)
+            ),
+        ]
         verbose_name = 'Cart Item'
         verbose_name_plural = 'Cart Items'
 
@@ -63,4 +75,8 @@ class CartItem(models.Model):
 
     @property
     def total_price(self):
-        return self.product.base_price * self.quantity
+        try:
+            price = float(self.product.base_price)
+            return price * self.quantity
+        except (ValueError, AttributeError, TypeError):
+            return 0

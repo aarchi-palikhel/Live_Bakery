@@ -330,7 +330,7 @@ class CakeDesignReference(models.Model):
         return "No product associated"
 
 
-class SuccessfulOrders:
+
     """
     A utility class for calculating revenue and statistics from successful orders
     (orders with payment_status = 'paid' AND status in ['confirmed', 'completed', 'baking'])
@@ -505,8 +505,6 @@ class SuccessfulOrders:
                 'end_date': end_date
             }
         }
-
-
 class CakeCustomization(models.Model):
     """Model for storing cake customization details"""
     

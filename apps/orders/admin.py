@@ -3,7 +3,7 @@ from django.utils.html import format_html
 from django.urls import reverse, path
 from django.utils.safestring import mark_safe
 from decimal import Decimal
-from .models import Order, OrderItem, CakeDesignReference, SuccessfulOrders
+from .models import Order, OrderItem, CakeDesignReference
 from unfold.admin import ModelAdmin
 from import_export.admin import ImportExportModelAdmin
 from unfold.contrib.import_export.forms import ExportForm, ImportForm, SelectableFieldsExportForm
@@ -126,14 +126,6 @@ class OrderAdmin(ModelAdmin, ImportExportModelAdmin):
             'classes': ('collapse',)
         }),
     )
-    
-    def get_urls(self):
-        urls = super().get_urls()
-        custom_urls = [
-            path('successful-orders/', self.admin_site.admin_view(self.successful_orders_view),
-                 name='orders_successful_orders'),
-        ]
-        return custom_urls + urls
     
     def order_id_display(self, obj):
         return format_html('<strong>#{}</strong>', obj.id)
@@ -274,188 +266,6 @@ class OrderAdmin(ModelAdmin, ImportExportModelAdmin):
         self.message_user(request, f"❌ {updated} order(s) marked as cancelled.")
     mark_as_cancelled.short_description = "❌ Mark as cancelled"
     
-    def successful_orders_view(self, request):
-        """
-        Custom view to display successful orders statistics
-        """
-        # Get date range from request or use default
-        days_param = request.GET.get('days', '30')
-        try:
-            days = int(days_param)
-        except ValueError:
-            days = 30
-        
-        end_date = timezone.now()
-        start_date = end_date - timedelta(days=days)
-        
-        # Get summary report
-        summary = SuccessfulOrders.get_summary_report(start_date, end_date)
-        
-        # Get top products
-        top_products = SuccessfulOrders.get_top_products(start_date, end_date, limit=10)
-        
-        # Get daily revenue
-        daily_revenue = SuccessfulOrders.get_revenue_by_date_range(days)
-        
-        # Calculate percentage change if we have previous period data
-        prev_end_date = start_date
-        prev_start_date = prev_end_date - timedelta(days=days)
-        prev_summary = SuccessfulOrders.get_summary_report(prev_start_date, prev_end_date)
-        
-        # Calculate percentage changes
-        revenue_change = 0
-        order_change = 0
-        if prev_summary['total_revenue'] > 0:
-            revenue_change = ((summary['total_revenue'] - prev_summary['total_revenue']) / prev_summary['total_revenue']) * 100
-        
-        if prev_summary['order_count'] > 0:
-            order_change = ((summary['order_count'] - prev_summary['order_count']) / prev_summary['order_count']) * 100
-        
-        # Build the HTML content for the dashboard
-        content = f"""
-        <div style="max-width: 1200px; margin: 0 auto;">
-            <h1>Successful Orders Dashboard</h1>
-            <p>Showing data for the last {days} days ({start_date.strftime('%b %d, %Y')} to {end_date.strftime('%b %d, %Y')})</p>
-            
-            <div style="margin-bottom: 20px;">
-                <form method="get" style="display: inline;">
-                    <label for="days">View data for last:</label>
-                    <select name="days" id="days" onchange="this.form.submit()">
-                        <option value="7" {'selected' if days == 7 else ''}>7 days</option>
-                        <option value="30" {'selected' if days == 30 else ''}>30 days</option>
-                        <option value="90" {'selected' if days == 90 else ''}>90 days</option>
-                        <option value="365" {'selected' if days == 365 else ''}>1 year</option>
-                    </select>
-                </form>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
-                <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    <h3>Total Revenue</h3>
-                    <div style="font-size: 2em; font-weight: bold; color: #4CAF50; margin: 10px 0;">Rs. {summary['total_revenue']:,.2f}</div>
-                    <div style="color: #666; font-size: 0.9em;">From {summary['order_count']} successful orders</div>
-                </div>
-                
-                <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    <h3>Average Order Value</h3>
-                    <div style="font-size: 2em; font-weight: bold; color: #4CAF50; margin: 10px 0;">Rs. {summary['average_order_value']:,.2f}</div>
-                    <div style="color: #666; font-size: 0.9em;">Per successful order</div>
-                </div>
-                
-                <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    <h3>Items Sold</h3>
-                    <div style="font-size: 2em; font-weight: bold; color: #4CAF50; margin: 10px 0;">{summary['total_items_sold']}</div>
-                    <div style="color: #666; font-size: 0.9em;">Total products sold</div>
-                </div>
-                
-                <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    <h3>Delivery Types</h3>
-        """
-        
-        for type_name, count in summary['delivery_types'].items():
-            content += f'<div style="margin: 5px 0;"><strong>{type_name.title()}:</strong> {count} orders</div>'
-        
-        content += """
-                </div>
-            </div>
-            
-            <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 20px;">
-                <h3>Top Selling Products (Last {days} days)</h3>
-        """
-        
-        if top_products:
-            content += """
-                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-                    <thead>
-                        <tr>
-                            <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e0e0e0; background: #f5f5f5; font-weight: bold;">Product</th>
-                            <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e0e0e0; background: #f5f5f5; font-weight: bold;">Quantity Sold</th>
-                            <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e0e0e0; background: #f5f5f5; font-weight: bold;">Revenue</th>
-                            <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e0e0e0; background: #f5f5f5; font-weight: bold;">Orders</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            """
-            
-            for product in top_products:
-                content += f"""
-                        <tr>
-                            <td style="padding: 12px; text-align: left; border-bottom: 1px solid #e0e0e0;">{product['product_name']}</td>
-                            <td style="padding: 12px; text-align: left; border-bottom: 1px solid #e0e0e0;">{product['quantity_sold']}</td>
-                            <td style="padding: 12px; text-align: left; border-bottom: 1px solid #e0e0e0;">
-                                <span style="background-color: #4CAF50; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.9em;">Rs. {product['revenue']:,.2f}</span>
-                            </td>
-                            <td style="padding: 12px; text-align: left; border-bottom: 1px solid #e0e0e0;">{product['orders_count']}</td>
-                        </tr>
-                """
-            
-            content += """
-                    </tbody>
-                </table>
-            """
-        else:
-            content += "<p>No product sales data available.</p>"
-        
-        content += """
-            </div>
-            
-            <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 20px;">
-                <h3>Daily Revenue Trend (Last {days} days)</h3>
-        """
-        
-        if daily_revenue:
-            content += """
-                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-                    <thead>
-                        <tr>
-                            <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e0e0e0; background: #f5f5f5; font-weight: bold;">Date</th>
-                            <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e0e0e0; background: #f5f5f5; font-weight: bold;">Revenue</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            """
-            
-            for date, revenue in sorted(daily_revenue.items(), reverse=True):
-                content += f"""
-                        <tr>
-                            <td style="padding: 12px; text-align: left; border-bottom: 1px solid #e0e0e0;">{date}</td>
-                            <td style="padding: 12px; text-align: left; border-bottom: 1px solid #e0e0e0;">
-                                <span style="background-color: #4CAF50; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.9em;">Rs. {revenue:,.2f}</span>
-                            </td>
-                        </tr>
-                """
-            
-            content += """
-                    </tbody>
-                </table>
-            """
-        else:
-            content += "<p>No daily revenue data available.</p>"
-        
-        content += """
-            </div>
-            
-            <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 20px;">
-                <h3>About Successful Orders</h3>
-                <p>Successful orders are defined as orders that meet <strong>ALL</strong> of these conditions:</p>
-                <ul>
-                    <li>✅ Payment Status: <span style="display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; background: #d4edda; color: #155724;">Paid</span></li>
-                    <li>✅ Order Status: One of <span style="display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; background: #fff3cd; color: #856404;">Confirmed</span>, <span style="display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; background: #e2e3e5; color: #383d41;">Baking</span>, or <span style="display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; background: #d1ecf1; color: #0c5460;">Completed</span></li>
-                </ul>
-                <p><em>Note: Orders with status "pending", "ready", or "cancelled" are not considered successful, even if paid.</em></p>
-            </div>
-        </div>
-        """
-        
-        context = {
-            **self.admin_site.each_context(request),
-            'title': 'Successful Orders Dashboard',
-            'content': mark_safe(content),
-        }
-        
-        return render(request, 'admin/base_site.html', context)
-
-
 @admin.register(OrderItem)
 class OrderItemAdmin(ModelAdmin):
     list_display = ['id_display', 'order_info', 'product_info', 'quantity', 
