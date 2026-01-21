@@ -1,5 +1,6 @@
 <!-- product_list.html -->
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}
     {% if category %}
@@ -10,18 +11,21 @@
 {% endblock %}
 
 {% block content %}
+<!-- Notification Container -->
+<div id="notifications-container"></div>
+
 <!-- Hero Section -->
-<section class="bg-linear-to-br from-amber-50 to-orange-50 py-12">
-    <div class="max-w-7xl mx-auto px-4">
+<section class="bg-linear-to-br from-amber-50 to-orange-50 py-10 sm:py-10 md:py-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center">
-            <h1 class="text-4xl font-bold text-gray-800 mb-4">
+            <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 mb-3 sm:mb-4 leading-tight">
                 {% if category %}
                     {{ category.name }}
                 {% else %}
                     Our Bakery Collection
                 {% endif %}
             </h1>
-            <p class="text-lg text-gray-600">
+            <p class="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
                 {% if category %}
                     {{ category.description|default:"Delicious treats in this category" }}
                 {% else %}
@@ -33,19 +37,19 @@
 </section>
 
 <!-- Products Section -->
-<section class="py-12 bg-white">
-    <div class="max-w-7xl mx-auto px-4">
+<section class="py-12 sm:py-16 md:py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Category Filters -->
-        <div class="mb-8">
-            <div class="flex flex-wrap gap-2 mb-4">
+        <div class="mb-8 sm:mb-10">
+            <div class="flex flex-wrap gap-2 mb-6">
                 <a href="{% url 'products:product_list' %}" 
-                   class="{% if not category %}bg-amber-500 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} px-4 py-2 rounded-lg transition duration-200">
+                   class="{% if not category %}bg-amber-500 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} px-4 py-2 rounded-lg transition duration-200 font-semibold text-sm sm:text-base">
                     All Products
                 </a>
                 
                 {% for cat in categories %}
                 <a href="{% url 'products:product_list_by_category' category_slug=cat.slug %}" 
-                   class="{% if category and category.slug == cat.slug %}bg-amber-500 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} px-4 py-2 rounded-lg transition duration-200">
+                   class="{% if category and category.slug == cat.slug %}bg-amber-500 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} px-4 py-2 rounded-lg transition duration-200 font-semibold text-sm sm:text-base">
                     {{ cat.name }}
                 </a>
                 {% endfor %}
@@ -53,14 +57,14 @@
             
             <!-- Search Form -->
             <div class="mb-6">
-                <form method="get" action="{% url 'products:product_search' %}" class="flex gap-4">
+                <form method="get" action="{% url 'products:product_search' %}" class="flex flex-col sm:flex-row gap-3 sm:gap-4">
                     <input type="text" 
                            name="query" 
                            placeholder="Search for products..."
                            value="{{ request.GET.query }}"
-                           class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                           class="flex-1 px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition text-sm sm:text-base">
                     <button type="submit" 
-                            class="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-lg transition duration-200">
+                            class="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 sm:py-3 rounded-lg transition duration-200 font-semibold text-sm sm:text-base shadow-md hover:shadow-lg">
                         Search
                     </button>
                 </form>
@@ -69,29 +73,128 @@
 
         <!-- Products Grid -->
         {% if products %}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 {% for product in products %}
-                    {% include 'products/product_card.html' with product=product %}
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition duration-300 border border-gray-100">
+                    <!-- Product Image -->
+                    <div class="relative h-48 sm:h-56 overflow-hidden bg-gray-100">
+                        {% if product.images.all %}
+                            {% with product.images.first as product_image %}
+                            <a href="{% url 'products:product_detail' product.id %}">
+                                <img src="{{ product_image.image.url }}" alt="{{ product.name }}" class="w-full h-full object-cover transform hover:scale-110 transition duration-300">
+                            </a>
+                            {% endwith %}
+                        {% else %}
+                            <a href="{% url 'products:product_detail' product.id %}">
+                                <div class="w-full h-full bg-linear-to-br from-amber-50 to-orange-50 flex items-center justify-center">
+                                    <div class="text-center">
+                                        <div class="w-16 h-16 bg-linear-to-br from-amber-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                                            <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0v-3a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0v3a2.704 2.704 0 01-1.5-.454z"/>
+                                            </svg>
+                                        </div>
+                                        <p class="text-xs sm:text-sm text-amber-600 font-medium">{{ product.category.name|default:"Bakery" }}</p>
+                                    </div>
+                                </div>
+                            </a>
+                        {% endif %}
+                        
+                        <!-- Featured Badge -->
+                        {% if product.is_featured %}
+                        <div class="absolute top-3 right-3 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">Featured</div>
+                        {% endif %}
+                        
+                        <!-- Stock Status Badge -->
+                        {% if not product.in_stock %}
+                        <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                            <span class="bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-sm">Out of Stock</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Product Info -->
+                    <div class="p-4 sm:p-6">
+                        <a href="{% url 'products:product_detail' product.id %}">
+                            <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2 hover:text-amber-600 transition duration-200 line-clamp-2">{{ product.name }}</h3>
+                        </a>
+                        
+                        <!-- Description -->
+                        <p class="text-gray-600 mb-4 text-xs sm:text-sm line-clamp-2">{{ product.short_description|default:product.description|truncatechars:60 }}</p>
+                        
+                        <!-- Category Badge -->
+                        <div class="mb-3">
+                            <span class="inline-block bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-semibold">
+                                {{ product.category.name }}
+                            </span>
+                        </div>
+                        
+                        <!-- Price and Action -->
+                        <div class="flex justify-between items-center border-t border-gray-100 pt-4">
+                            <div>
+                                <span class="text-xl sm:text-2xl font-bold text-amber-600">Rs. {{ product.base_price }}</span>
+                                {% if product.is_cake %}
+                                <p class="text-xs text-gray-500 mt-1">{{ product.get_cake_weight_display }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            {% if product.in_stock and product.available %}
+                                {% if user.is_authenticated %}
+                                    {% if product.is_cake %}
+                                        <!-- Customize Cake Button-->
+                                        <a href="{% url 'orders:customize_cake' product.id %}" 
+                                           class="bg-linear-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-3 sm:px-4 py-2 rounded-lg transition duration-200 text-xs sm:text-sm font-semibold shadow-md hover:shadow-lg">
+                                            <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                            </svg>
+                                            Customize
+                                        </a>
+                                    {% else %}
+                                        <!-- Add to Cart Button -->
+                                        <form method="post" action="{% url 'cart:cart_add' product.id %}" class="add-to-cart-form" data-product-id="{{ product.id }}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="quantity" value="1">
+                                            <input type="hidden" name="override" value="false">
+                                            <button type="submit" class="bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-3 sm:px-4 py-2 rounded-lg transition duration-200 text-xs sm:text-sm font-semibold add-to-cart-btn shadow-md hover:shadow-lg" data-product-id="{{ product.id }}" title="Add to Cart">
+                                                <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                                </svg>
+                                                Add
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                {% else %}
+                                    <a href="{% url 'users:login' %}" class="bg-gray-400 hover:bg-gray-500 text-white px-3 sm:px-4 py-2 rounded-lg transition duration-200 text-xs sm:text-sm font-semibold">
+                                        Login
+                                    </a>
+                                {% endif %}
+                            {% else %}
+                                <button disabled class="bg-gray-300 text-gray-600 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold cursor-not-allowed">
+                                    Unavailable
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
                 {% endfor %}
             </div>
 
             <!-- Pagination -->
             {% if is_paginated %}
-            <div class="flex justify-center mt-12">
-                <nav class="flex space-x-2">
+            <div class="flex justify-center mt-12 sm:mt-16">
+                <nav class="flex flex-wrap justify-center gap-2">
                     {% if page_obj.has_previous %}
                         <a href="?page={{ page_obj.previous_page_number }}{% if category %}&category={{ category.slug }}{% endif %}" 
-                           class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition duration-200">
-                            Previous
+                           class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition duration-200 font-semibold text-sm">
+                            ← Previous
                         </a>
                     {% endif %}
                     
                     {% for num in page_obj.paginator.page_range %}
                         {% if page_obj.number == num %}
-                            <span class="px-4 py-2 bg-amber-500 text-white rounded-lg">{{ num }}</span>
+                            <span class="px-4 py-2 bg-amber-500 text-white rounded-lg font-semibold text-sm">{{ num }}</span>
                         {% else %}
                             <a href="?page={{ num }}{% if category %}&category={{ category.slug }}{% endif %}" 
-                               class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition duration-200">
+                               class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition duration-200 font-semibold text-sm">
                                 {{ num }}
                             </a>
                         {% endif %}
@@ -99,8 +202,8 @@
                     
                     {% if page_obj.has_next %}
                         <a href="?page={{ page_obj.next_page_number }}{% if category %}&category={{ category.slug }}{% endif %}" 
-                           class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition duration-200">
-                            Next
+                           class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition duration-200 font-semibold text-sm">
+                            Next →
                         </a>
                     {% endif %}
                 </nav>
@@ -108,20 +211,65 @@
             {% endif %}
         {% else %}
             <!-- No Products Found -->
-            <div class="text-center py-12">
-                <div class="w-24 h-24 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-12 h-12 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="text-center py-16 sm:py-20">
+                <div class="w-20 h-20 sm:w-24 sm:h-24 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-10 h-10 sm:w-12 sm:h-12 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
                     </svg>
                 </div>
-                <h3 class="text-xl font-bold text-gray-800 mb-2">No Products Found</h3>
-                <p class="text-gray-600 mb-6">We couldn't find any products matching your criteria.</p>
+                <h3 class="text-xl sm:text-2xl font-bold text-gray-800 mb-2">No Products Found</h3>
+                <p class="text-gray-600 mb-6 sm:mb-8 text-sm sm:text-base">We couldn't find any products matching your criteria.</p>
                 <a href="{% url 'products:product_list' %}" 
-                   class="inline-block bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-lg transition duration-200">
+                   class="inline-block bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold py-3 px-6 sm:px-8 rounded-lg text-base sm:text-lg transition duration-200 shadow-lg hover:shadow-xl">
                     View All Products
                 </a>
             </div>
         {% endif %}
     </div>
 </section>
+
+<!-- Load notifications script -->
+<script src="{% static 'js/notifications.js' %}"></script>
+
+<style>
+@keyframes slide-in {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slide-out {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+.animate-slide-in {
+    animation: slide-in 0.3s ease-out;
+}
+
+.animate-slide-out {
+    animation: slide-out 0.3s ease-in;
+}
+
+/* Responsive adjustments for notifications */
+@media (max-width: 640px) {
+    #notifications-container {
+        left: 8px !important;
+        right: 8px !important;
+        max-width: calc(100% - 16px) !important;
+    }
+}
+</style>
+
 {% endblock %}

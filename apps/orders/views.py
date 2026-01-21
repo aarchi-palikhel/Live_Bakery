@@ -109,11 +109,11 @@ def create_order_with_payment(request):
                     })
                 
                 else:
-                    # For COD, mark as pending
+                    # For COD, mark as confirmed instead of pending
                     order.payment_status = 'pending'
-                    order.status = 'confirmed'
+                    order.status = 'confirmed'  # Changed from 'pending' to 'confirmed'
                     order.save()
-                    
+
                     # Clear cart
                     cart.items.all().delete()
                     
@@ -331,7 +331,7 @@ def order_create(request):
                             special_instructions=special_instructions,
                             payment_method=payment_method,
                             payment_status='pending',
-                            status='pending',
+                            status='confirmed' if payment_method == 'cod' else 'pending',  # Changed this line
                             subtotal=subtotal,
                             total_amount=total,
                         )

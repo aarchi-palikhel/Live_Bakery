@@ -1,6 +1,13 @@
 from django.contrib import admin
 from .models import ContactMessage
 from unfold.admin import ModelAdmin
+from django.contrib import admin
+
+# Configure admin site
+admin.site.site_header = "Live Bakery Administration"
+admin.site.site_title = "Live Bakery Admin"
+admin.site.index_title = "Dashboard"
+admin.site.index_template = 'admin/index.html' 
 
 @admin.register(ContactMessage)
 class ContactMessageAdmin(ModelAdmin):

@@ -106,10 +106,10 @@ class NotificationManager {
         notification.innerHTML = `
             <div class="flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3 flex-1">
-                    <span class="text-xl flex-shrink-0" style="line-height: 1;">${icon}</span>
-                    <span class="text-sm sm:text-base break-words">${message}</span>
+                    <span class="text-xl shrink-0" style="line-height: 1;">${icon}</span>
+                    <span class="text-sm sm:text-base wrap-break-word">${message}</span>
                 </div>
-                <button class="flex-shrink-0 focus:outline-none hover:opacity-75 transition" 
+                <button class="shrink-0 focus:outline-none hover:opacity-75 transition" 
                         onclick="this.closest('[class*=bg-]').remove()" 
                         style="padding: 0; background: none; border: none; cursor: pointer; line-height: 1;">
                     <span style="font-size: 20px;">×</span>

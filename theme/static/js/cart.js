@@ -4,12 +4,8 @@ console.log('Cart JS loaded');
 document.addEventListener('cartUpdated', function(event) {
     console.log('Cart update event received:', event.detail);
     
-    if (event.detail && event.detail.count !== undefined) {
-        if (typeof updateCartCount === 'function') {
-            updateCartCount(event.detail.count);
-        } else {
-            console.log('updateCartCount function not found');
-        }
+    if (event.detail && event.detail.total_items !== undefined) {
+        updateCartTotals(event.detail);
     }
 });
 
@@ -67,34 +63,60 @@ async function updateQuantity(form, change) {
         quantityDisplay.style.opacity = '1';
     }, 100);
     
+    const csrfToken = document.querySelector('[name="csrfmiddlewaretoken"]')?.value;
+    
+    if (!csrfToken) {
+        console.error('CSRF token not found');
+        window.cartIsUpdating = false;
+        showError('Security error: CSRF token missing');
+        // Revert quantity on error
+        quantityDisplay.textContent = currentQty;
+        return;
+    }
+    
     const formData = new FormData(form);
     formData.set('quantity', newQty);
     
     try {
+        console.log('Sending update request to:', form.action);
+        console.log('New quantity:', newQty);
+        
         const response = await fetch(form.action, {
             method: 'POST',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                'X-CSRFToken': csrfToken
             },
             body: formData
         });
         
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+        
+        if (!response.ok) {
+            console.error('Response not OK, status:', response.status);
+        }
+        
         const data = await response.json();
+        console.log('Response data:', data);
         
         if (data.success) {
-            showSuccess(`Quantity updated to ${newQty}`);
+            console.log('Update successful');
+            showSuccess(data.message || `Quantity updated to ${newQty}`);
             updateCartTotals(data);
             updateButtonStates(form, newQty);
         } else {
+            console.error('Update failed:', data.message);
             showError(data.message || 'Failed to update quantity');
             // Revert quantity on error
             quantityDisplay.textContent = currentQty;
             updateButtonStates(form, currentQty);
         }
     } catch (error) {
-        console.error('Error:', error);
-        showError('An error occurred');
+        console.error('Fetch error:', error);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        showError('An error occurred: ' + error.message);
         quantityDisplay.textContent = currentQty;
         updateButtonStates(form, currentQty);
     } finally {
@@ -122,23 +144,46 @@ function updateButtonStates(form, quantity) {
 
 // Update cart totals dynamically
 function updateCartTotals(data) {
-    // Update total items count
+    console.log('Updating cart totals:', data);
+    
+    // Update total items count - IN CART PAGE
     if (data.total_items !== undefined) {
+        console.log('Updating total items to:', data.total_items);
+        
         const itemsElements = document.querySelectorAll('[data-total-items]');
+        console.log('Found', itemsElements.length, 'elements with data-total-items');
         itemsElements.forEach(el => {
             el.textContent = data.total_items;
         });
         
-        // Also update cart badge in navbar if it exists
+        // Update navbar cart badge
         const cartCount = document.getElementById('cart-count');
         if (cartCount) {
+            console.log('Updating cart-count element');
             cartCount.textContent = data.total_items;
         }
+        
+        const mobileCartCount = document.getElementById('mobile-cart-count');
+        if (mobileCartCount) {
+            console.log('Updating mobile-cart-count element');
+            mobileCartCount.textContent = data.total_items;
+        }
+        
+        // Update cart count in header/nav - multiple selectors
+        const navCartCounts = document.querySelectorAll('.cart-count, [data-cart-count]');
+        console.log('Found', navCartCounts.length, 'nav cart count elements');
+        navCartCounts.forEach(el => {
+            el.textContent = data.total_items;
+        });
     }
     
     // Update total price
     if (data.total_price !== undefined) {
+        console.log('Updating total price to:', data.total_price);
+        
         const priceElements = document.querySelectorAll('[data-total-price]');
+        console.log('Found', priceElements.length, 'elements with data-total-price');
+        
         priceElements.forEach(el => {
             el.style.transition = 'all 0.3s ease';
             el.style.opacity = '0.7';
@@ -151,6 +196,8 @@ function updateCartTotals(data) {
     
     // Update individual item price if provided
     if (data.item_total_price !== undefined && data.product_id !== undefined) {
+        console.log('Updating item price for product:', data.product_id);
+        
         const itemElement = document.querySelector(`[data-product-id="${data.product_id}"]`);
         if (itemElement) {
             const priceEl = itemElement.querySelector('.item-total-price');
@@ -174,17 +221,20 @@ async function removeItem(form) {
     button.innerHTML = '<span class="animate-spin">⟳</span>';
     button.disabled = true;
     
+    const csrfToken = document.querySelector('[name="csrfmiddlewaretoken"]')?.value;
+    
     try {
         const response = await fetch(form.action, {
             method: 'POST',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': new FormData(form).get('csrfmiddlewaretoken')
+                'X-CSRFToken': csrfToken
             },
             body: new FormData(form)
         });
         
         const data = await response.json();
+        console.log('Remove item response:', data);
         
         if (data.success) {
             // Smooth fade out animation
@@ -195,14 +245,19 @@ async function removeItem(form) {
             setTimeout(() => {
                 cartItem.remove();
                 
+                // Update cart totals immediately - this updates navbar
+                updateCartTotals(data);
+                
                 // Check if this was the last item
                 if (data.total_items === 0) {
                     // Fade out the cart and show empty state
-                    fadeOutCartShowEmpty();
+                    console.log('Cart is now empty, showing empty state');
+                    setTimeout(() => {
+                        fadeOutCartShowEmpty();
+                    }, 300);
                 } else {
-                    // Update totals
-                    updateCartTotals(data);
-                    showSuccess('Item removed from cart');
+                    // Show success message
+                    showSuccess(data.message || 'Item removed from cart');
                 }
             }, 300);
         } else {
@@ -212,7 +267,7 @@ async function removeItem(form) {
         }
     } catch (error) {
         console.error('Error:', error);
-        showError('An error occurred');
+        showError('An error occurred: ' + error.message);
         button.disabled = false;
         button.innerHTML = originalHTML;
     }
@@ -232,12 +287,14 @@ async function clearCart(form) {
         return;
     }
     
+    const csrfToken = document.querySelector('[name="csrfmiddlewaretoken"]')?.value;
+    
     try {
         const response = await fetch(form.action, {
             method: 'POST',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': new FormData(form).get('csrfmiddlewaretoken')
+                'X-CSRFToken': csrfToken
             },
             body: new FormData(form)
         });
@@ -257,6 +314,7 @@ async function clearCart(form) {
             
             // Show empty state after animation
             setTimeout(() => {
+                updateCartTotals(data);
                 fadeOutCartShowEmpty();
             }, cartItems.length * 100 + 300);
         } else {
@@ -266,7 +324,7 @@ async function clearCart(form) {
         }
     } catch (error) {
         console.error('Error:', error);
-        showError('An error occurred');
+        showError('An error occurred: ' + error.message);
         button.textContent = originalText;
         button.disabled = false;
     }
@@ -274,22 +332,43 @@ async function clearCart(form) {
 
 // Fade out cart and show empty state
 function fadeOutCartShowEmpty() {
-    const cartContainer = document.querySelector('.grid.lg\\:grid-cols-3');
+    const gridContainer = document.querySelector('.grid.lg\\:grid-cols-3');
     
-    if (cartContainer) {
-        cartContainer.style.opacity = '0';
-        cartContainer.style.transition = 'opacity 0.4s ease';
+    if (gridContainer) {
+        // Fade out the grid
+        gridContainer.style.opacity = '0';
+        gridContainer.style.transition = 'opacity 0.4s ease';
         
         setTimeout(() => {
-            // Reload the page to show empty state
-            location.reload();
+            // Replace with empty state HTML
+            const emptyStateHTML = `
+                <div class="text-center py-12">
+                    <div class="w-24 h-24 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                        <span class="text-3xl">🛒</span>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">Your cart is empty</h3>
+                    <p class="text-gray-600 mb-6">Add some delicious bakery items to get started!</p>
+                    <a href="/products/" class="bg-[#8f3232] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#7a2a2a] inline-block transition">
+                        Start Shopping
+                    </a>
+                </div>
+            `;
+            
+            gridContainer.innerHTML = emptyStateHTML;
+            gridContainer.style.opacity = '1';
+            gridContainer.style.transition = 'opacity 0.4s ease';
+            
+            showSuccess('Cart cleared');
         }, 400);
+    } else {
+        // Fallback: reload the page
+        location.reload();
     }
 }
 
 // Setup event listeners
 function setupCart() {
-    console.log('Setting up cart - fresh setup');
+    console.log('Setting up cart event listeners');
     
     // Quantity buttons - direct event listeners
     document.querySelectorAll('.quantity-minus').forEach(btn => {
@@ -298,6 +377,7 @@ function setupCart() {
             e.stopPropagation();
             const form = this.closest('.update-cart-form');
             if (form) {
+                console.log('Minus button clicked, form:', form);
                 updateQuantity(form, -1);
             }
         });
@@ -309,6 +389,7 @@ function setupCart() {
             e.stopPropagation();
             const form = this.closest('.update-cart-form');
             if (form) {
+                console.log('Plus button clicked, form:', form);
                 updateQuantity(form, 1);
             }
         });
@@ -341,6 +422,8 @@ function setupCart() {
             }
         }
     });
+    
+    console.log('Cart setup complete');
 }
 
 // Initialize
@@ -353,5 +436,5 @@ if (!window.cartInitialized) {
         setupCart();
     }
 } else {
-    console.log('Cart already initialized, skipping');
+    console.log('Cart already initialized');
 }

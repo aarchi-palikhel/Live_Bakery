@@ -1,120 +1,105 @@
 {% load static %}
-<div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition duration-300 border border-gray-100 product-card" 
-     data-product-id="{{ product.id }}">
-    <a href="{% url 'products:product_detail' product_id=product.id %}">
-        <div class="h-48 bg-gray-50 flex items-center justify-center relative overflow-hidden">
-            {% if product.images.exists %}
-                {% with product.images.first as main_image %}
-                <img src="{{ main_image.image.url }}" 
-                     alt="{{ main_image.alt_text|default:product.name }}" 
-                     class="w-full h-full object-cover hover:scale-105 transition-transform duration-300">
-                {% endwith %}
-            {% else %}
-                <div class="text-center p-4">
-                    <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                        {% if product.is_cake %}
-                        <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0v-3a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0v3a2.704 2.704 0 01-1.5-.454z"/>
-                        </svg>
-                        {% else %}
-                        <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/>
-                        </svg>
-                        {% endif %}
+
+<div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition duration-300 border border-gray-100">
+    <!-- Product Image -->
+    <div class="relative h-48 sm:h-56 overflow-hidden bg-gray-100">
+        {% if product.images.all %}
+            {% with product.images.first as product_image %}
+            <a href="{% url 'products:product_detail' product.id %}">
+                <img src="{{ product_image.image.url }}" alt="{{ product.name }}" class="w-full h-full object-cover transform hover:scale-110 transition duration-300">
+            </a>
+            {% endwith %}
+        {% else %}
+            <a href="{% url 'products:product_detail' product.id %}">
+                <div class="w-full h-full bg-linear-to-br from-amber-50 to-orange-50 flex items-center justify-center">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-linear-to-br from-amber-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0v-3a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0v3a2.704 2.704 0 01-1.5-.454z"/>
+                            </svg>
+                        </div>
+                        <p class="text-xs sm:text-sm text-amber-600 font-medium">{{ product.category.name|default:"Bakery" }}</p>
                     </div>
-                    <p class="text-amber-600 font-medium">{{ product.category.name }}</p>
                 </div>
-            {% endif %}
-            
-            <!-- Badges -->
-            {% if product.is_featured %}
-            <div class="absolute top-2 left-2">
-                <span class="bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                    Featured
-                </span>
-            </div>
-            {% endif %}
-            
-            {% if not product.in_stock %}
-            <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                <span class="bg-red-500 text-white text-sm font-bold px-3 py-1 rounded-full">
-                    Out of Stock
-                </span>
-            </div>
-            {% endif %}
+            </a>
+        {% endif %}
+        
+        <!-- Featured Badge -->
+        {% if product.is_featured %}
+        <div class="absolute top-3 right-3 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">Featured</div>
+        {% endif %}
+        
+        <!-- Stock Status Badge -->
+        {% if not product.in_stock %}
+        <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <span class="bg-red-600 text-white px-4 py-2 rounded-lg font-bold">Out of Stock</span>
         </div>
-    </a>
+        {% endif %}
+    </div>
     
-    <div class="p-6">
-        <a href="{% url 'products:product_detail' product_id=product.id %}">
-            <h3 class="text-xl font-bold text-gray-800 mb-2 hover:text-amber-600 transition duration-200 product-name">
-                {{ product.name }}
-            </h3>
+    <!-- Product Info -->
+    <div class="p-4 sm:p-6">
+        <a href="{% url 'products:product_detail' product.id %}">
+            <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2 hover:text-amber-600 transition duration-200 line-clamp-2">{{ product.name }}</h3>
         </a>
         
-        <!-- Product Info -->
+        <!-- Description -->
+        <p class="text-gray-600 mb-4 text-xs sm:text-sm line-clamp-2">{{ product.short_description|default:product.description|truncatechars:60 }}</p>
+        
+        <!-- Category Badge -->
         <div class="mb-3">
-            {% if product.is_cake and product.get_available_flavors_list %}
-            <div class="mb-2">
-                <span class="text-sm text-purple-600 font-medium">
-                    Flavors: {{ product.get_available_flavors_list|join:", "|truncatewords:3 }}
-                </span>
-            </div>
-            {% endif %}
-            
-            <p class="text-gray-600 text-sm line-clamp-2 mb-3">
-                {{ product.short_description|default:product.description|truncatewords:15 }}
-            </p>
-            
-            {% if product.weight %}
-            <div class="text-xs text-gray-500 mb-2">
-                <span class="font-medium">Weight:</span> {{ product.weight }}
-            </div>
-            {% endif %}
-            
-            {% if product.serves %}
-            <div class="text-xs text-gray-500 mb-2">
-                <span class="font-medium">Serves:</span> {{ product.serves }}
-            </div>
-            {% endif %}
+            <span class="inline-block bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-semibold">
+                {{ product.category.name }}
+            </span>
         </div>
         
+        <!-- Rating (if available) -->
+        {% if product.rating %}
+        <div class="flex items-center mb-3">
+            <div class="flex text-yellow-400">
+                {% for i in "12345" %}
+                    {% if i <= product.rating %}
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+                    {% else %}
+                        <svg class="w-4 h-4 fill-gray-300" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <span class="text-xs text-gray-600 ml-2">({{ product.review_count|default:0 }} reviews)</span>
+        </div>
+        {% endif %}
+        
         <!-- Price and Action -->
-        <div class="flex justify-between items-center">
+        <div class="flex justify-between items-center border-t border-gray-100 pt-4">
             <div>
-                <span class="text-xl font-bold text-amber-600">Rs. {{ product.base_price }}</span>
+                <span class="text-xl sm:text-2xl font-bold text-amber-600">Rs. {{ product.base_price }}</span>
+                {% if product.is_cake %}
+                <p class="text-xs text-gray-500 mt-1">{{ product.get_cake_weight_display }}</p>
+                {% endif %}
             </div>
             
-            {% if user.is_authenticated %}
-                {% if product.in_stock %}
-                    {% if product.is_cake %}
-                    <a href="{% url 'orders:customize_cake' product_id=product.id %}" 
-                       class="bg-amber-500 hover:bg-amber-600 text-white text-center px-3 py-2 rounded-lg transition duration-200 text-sm">
-                        Customize Order
-                    </a>
-                    {% else %}
-                    <form method="post" 
-                          action="{% url 'cart:cart_add' product.id %}" 
-                          class="add-to-cart-form"
-                          data-product-id="{{ product.id }}">
+            {% if product.in_stock and product.available %}
+                {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'cart:cart_add' product.id %}" class="add-to-cart-form" data-product-id="{{ product.id }}">
                         {% csrf_token %}
-                        <input type="hidden" name="override" value="false">
                         <input type="hidden" name="quantity" value="1">
-                        <button type="submit" 
-                                class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg transition duration-200 text-sm add-to-cart-btn"
-                                data-product-id="{{ product.id }}">
-                            Add to Cart
+                        <input type="hidden" name="override" value="false">
+                        <button type="submit" class="bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-3 sm:px-4 py-2 rounded-lg transition duration-200 text-xs sm:text-sm font-semibold add-to-cart-btn shadow-md hover:shadow-lg" data-product-id="{{ product.id }}" title="Add to Cart">
+                            <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                            Add
                         </button>
                     </form>
-                    {% endif %}
                 {% else %}
-                    <span class="text-sm text-gray-500">Out of Stock</span>
+                    <a href="{% url 'users:login' %}" class="bg-gray-400 hover:bg-gray-500 text-white px-3 sm:px-4 py-2 rounded-lg transition duration-200 text-xs sm:text-sm font-semibold">
+                        Login
+                    </a>
                 {% endif %}
             {% else %}
-                <a href="{% url 'users:login' %}?next={{ request.path }}" 
-                   class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition duration-200 text-sm">
-                    Login to Order
-                </a>
+                <button disabled class="bg-gray-300 text-gray-600 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold cursor-not-allowed">
+                    Unavailable
+                </button>
             {% endif %}
         </div>
     </div>
