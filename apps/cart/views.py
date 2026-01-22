@@ -1,4 +1,5 @@
 import traceback
+import logging
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -9,6 +10,9 @@ from django.views.decorators.csrf import csrf_protect
 from products.models import Product
 from .models import Cart, CartItem
 from users.decoraters import customer_required
+
+# Set up logging
+logger = logging.getLogger('cart')
 
 def get_cart_totals(cart):
     """Helper function to safely get cart totals"""
@@ -39,8 +43,7 @@ def cart_detail(request):
         return render(request, 'cart/cart_detail.html', context)
         
     except Exception as e:
-        print(f"ERROR in cart_detail: {str(e)}")
-        traceback.print_exc()
+        logger.error(f"Error in cart_detail for user {request.user.id}: {str(e)}", exc_info=True)
         messages.error(request, "Unable to load your cart")
         return redirect('products:product_list')
 
@@ -126,8 +129,7 @@ def cart_add(request, product_id):
             return redirect(request.META.get('HTTP_REFERER', 'products:product_list'))
     
     except Exception as e:
-        print(f"ERROR in cart_add: {str(e)}")
-        traceback.print_exc()
+        logger.error(f"Error in cart_add for user {request.user.id}, product {product_id}: {str(e)}", exc_info=True)
         
         if is_ajax:
             return JsonResponse({
@@ -173,8 +175,7 @@ def cart_remove(request, product_id):
         return redirect('cart:cart_detail')
     
     except Exception as e:
-        print(f"ERROR in cart_remove: {str(e)}")
-        traceback.print_exc()
+        logger.error(f"Error in cart_remove for user {request.user.id}, product {product_id}: {str(e)}", exc_info=True)
         if is_ajax:
             return JsonResponse({
                 'success': False,
@@ -230,8 +231,7 @@ def cart_update(request, product_id):
         return redirect('cart:cart_detail')
     
     except Exception as e:
-        print(f"ERROR in cart_update: {str(e)}")
-        traceback.print_exc()
+        logger.error(f"Error in cart_update for user {request.user.id}, product {product_id}: {str(e)}", exc_info=True)
         if is_ajax:
             return JsonResponse({
                 'success': False,
@@ -262,8 +262,7 @@ def cart_clear(request):
         return redirect('cart:cart_detail')
     
     except Exception as e:
-        print(f"ERROR in cart_clear: {str(e)}")
-        traceback.print_exc()
+        logger.error(f"Error in cart_clear for user {request.user.id}: {str(e)}", exc_info=True)
         if is_ajax:
             return JsonResponse({
                 'success': False,
@@ -290,8 +289,7 @@ def cart_get_count(request):
             'total_price': 0
         })
     except Exception as e:
-        print(f"ERROR in cart_get_count: {str(e)}")
-        traceback.print_exc()
+        logger.error(f"Error in cart_get_count for user {request.user.id}: {str(e)}", exc_info=True)
         return JsonResponse({
             'success': False,
             'message': "Error getting cart count"

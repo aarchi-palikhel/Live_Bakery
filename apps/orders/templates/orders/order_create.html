@@ -88,6 +88,12 @@
                         <p><span class="font-medium">Hours:</span> 9:00 AM - 7:00 PM (Daily)</p>
                         <p><span class="font-medium">Contact:</span> +977 9811223344</p>
                         <p class="mt-2 text-green-600 font-medium">✓ Free pickup - No delivery charges!</p>
+                        {% if user.mobile_no %}
+                        <div class="mt-3 p-2 bg-white rounded border border-blue-200">
+                            <p class="text-blue-800"><span class="font-medium">Your contact number:</span> {{ user.mobile_no }}</p>
+                            <p class="text-xs text-blue-600 mt-1">We'll use this number to notify you when your order is ready</p>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -107,10 +113,39 @@
                             <label class="block text-sm font-medium text-gray-700 mb-1">
                                 Phone Number *
                             </label>
-                            {{ order_form.phone_number }}
-                            {% if order_form.phone_number.errors %}
-                            <p class="text-red-500 text-sm mt-1">{{ order_form.phone_number.errors.0 }}</p>
+                            
+                            <!-- Default phone option -->
+                            {% if user.mobile_no %}
+                            <div class="mb-3">
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                    <input type="radio" name="phone_option" value="default" class="mr-3" checked>
+                                    <div>
+                                        <span class="font-medium text-gray-800">Use saved phone number</span>
+                                        <p class="text-sm text-gray-600">{{ user.mobile_no }}</p>
+                                    </div>
+                                </label>
+                            </div>
                             {% endif %}
+                            
+                            <!-- Manual phone option -->
+                            <div class="mb-3">
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                    <input type="radio" name="phone_option" value="manual" class="mr-3" {% if not user.mobile_no %}checked{% endif %}>
+                                    <span class="font-medium text-gray-800">Enter phone number manually</span>
+                                </label>
+                            </div>
+                            
+                            <!-- Phone input field -->
+                            <div id="manual-phone-input" class="{% if user.mobile_no %}hidden{% endif %}">
+                                {{ order_form.phone_number }}
+                                {% if order_form.phone_number.errors %}
+                                <p class="text-red-500 text-sm mt-1">{{ order_form.phone_number.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Hidden field to store the actual phone number -->
+                            <input type="hidden" name="final_phone_number" id="final_phone_number" value="{% if user.mobile_no %}{{ user.mobile_no }}{% endif %}">
+                            
                             <p class="text-sm text-gray-500 mt-1">We'll contact you for order updates</p>
                         </div>
                         
@@ -140,10 +175,39 @@
                             <label class="block text-sm font-medium text-gray-700 mb-1">
                                 Delivery Address *
                             </label>
-                            {{ order_form.delivery_address }}
-                            {% if order_form.delivery_address.errors %}
-                            <p class="text-red-500 text-sm mt-1">{{ order_form.delivery_address.errors.0 }}</p>
+                            
+                            <!-- Default address option -->
+                            {% if user.delivery_address %}
+                            <div class="mb-3">
+                                <label class="flex items-start p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                    <input type="radio" name="address_option" value="default" class="mr-3 mt-1" checked>
+                                    <div>
+                                        <span class="font-medium text-gray-800">Use saved delivery address</span>
+                                        <p class="text-sm text-gray-600 mt-1">{{ user.delivery_address }}</p>
+                                    </div>
+                                </label>
+                            </div>
                             {% endif %}
+                            
+                            <!-- Manual address option -->
+                            <div class="mb-3">
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                    <input type="radio" name="address_option" value="manual" class="mr-3" {% if not user.delivery_address %}checked{% endif %}>
+                                    <span class="font-medium text-gray-800">Enter delivery address manually</span>
+                                </label>
+                            </div>
+                            
+                            <!-- Address input field -->
+                            <div id="manual-address-input" class="{% if user.delivery_address %}hidden{% endif %}">
+                                {{ order_form.delivery_address }}
+                                {% if order_form.delivery_address.errors %}
+                                <p class="text-red-500 text-sm mt-1">{{ order_form.delivery_address.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Hidden field to store the actual delivery address -->
+                            <input type="hidden" name="final_delivery_address" id="final_delivery_address" value="{% if user.delivery_address %}{{ user.delivery_address }}{% endif %}">
+                            
                             <p class="text-sm text-gray-500 mt-1">Enter full address including area</p>
                             <div class="mt-2 text-sm text-gray-600">
                                 <p class="font-medium">Delivery Charges:</p>
@@ -364,7 +428,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update order summary
     function updateOrderSummary() {
         const deliveryType = document.querySelector('input[name="delivery_type"]:checked')?.value || 'delivery';
-        const address = deliveryAddressInput ? deliveryAddressInput.value : '';
+        const finalDeliveryAddress = document.getElementById('final_delivery_address');
+        const address = finalDeliveryAddress ? finalDeliveryAddress.value : '';
         const deliveryFee = calculateDeliveryFee(address, deliveryType);
         const total = SUBTOTAL + deliveryFee;
         
@@ -427,11 +492,11 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Validating form...');
         
         const deliveryType = document.querySelector('input[name="delivery_type"]:checked')?.value;
-        const phoneNumber = document.querySelector('input[name="phone_number"]')?.value.trim();
-        const deliveryAddress = document.querySelector('textarea[name="delivery_address"]')?.value.trim();
+        const finalPhoneNumber = document.getElementById('final_phone_number')?.value.trim();
+        const finalDeliveryAddress = document.getElementById('final_delivery_address')?.value.trim();
         const paymentMethod = document.querySelector('input[name="payment_method"]:checked')?.value;
         
-        console.log('Form data:', { deliveryType, phoneNumber, deliveryAddress, paymentMethod });
+        console.log('Form data:', { deliveryType, finalPhoneNumber, finalDeliveryAddress, paymentMethod });
         
         // Check payment method
         if (!paymentMethod) {
@@ -440,21 +505,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Check phone number
-        if (!phoneNumber) {
+        if (!finalPhoneNumber) {
             alert('Please enter your phone number.');
             return false;
         }
         
         // Validate phone number format
         const phoneRegex = /^[0-9]{10}$/;
-        const cleanPhone = phoneNumber.replace(/[\s\-\(\)]/g, '');
+        const cleanPhone = finalPhoneNumber.replace(/[\s\-\(\)]/g, '');
         if (!phoneRegex.test(cleanPhone)) {
             alert('Please enter a valid 10-digit phone number.');
             return false;
         }
         
         // Check delivery address for delivery type
-        if (deliveryType === 'delivery' && !deliveryAddress) {
+        if (deliveryType === 'delivery' && !finalDeliveryAddress) {
             alert('Please enter your delivery address.');
             return false;
         }
@@ -468,6 +533,20 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!validateForm()) {
             return;
+        }
+        
+        // Update form fields with final values before submission
+        const finalPhoneNumber = document.getElementById('final_phone_number')?.value;
+        const finalDeliveryAddress = document.getElementById('final_delivery_address')?.value;
+        const phoneNumberField = document.querySelector('input[name="phone_number"]');
+        const deliveryAddressField = document.querySelector('textarea[name="delivery_address"]');
+        
+        if (finalPhoneNumber && phoneNumberField) {
+            phoneNumberField.value = finalPhoneNumber;
+        }
+        
+        if (finalDeliveryAddress && deliveryAddressField) {
+            deliveryAddressField.value = finalDeliveryAddress;
         }
         
         const paymentMethod = document.querySelector('input[name="payment_method"]:checked')?.value;
@@ -493,7 +572,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // First, get the delivery fee from current state
             const deliveryType = document.querySelector('input[name="delivery_type"]:checked')?.value || 'delivery';
-            const address = deliveryAddressInput ? deliveryAddressInput.value : '';
+            const finalDeliveryAddress = document.getElementById('final_delivery_address');
+            const address = finalDeliveryAddress ? finalDeliveryAddress.value : '';
             const calculatedFee = calculateDeliveryFee(address, deliveryType);
             
             // Create FormData
@@ -571,6 +651,64 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Set up confirm order button
         confirmOrderBtn.addEventListener('click', handleConfirmOrder);
+        
+        // Set up phone option toggles
+        const phoneOptions = document.querySelectorAll('input[name="phone_option"]');
+        const manualPhoneInput = document.getElementById('manual-phone-input');
+        const finalPhoneNumber = document.getElementById('final_phone_number');
+        const phoneNumberField = document.querySelector('input[name="phone_number"]');
+        
+        phoneOptions.forEach(option => {
+            option.addEventListener('change', function() {
+                if (this.value === 'manual') {
+                    manualPhoneInput.classList.remove('hidden');
+                    finalPhoneNumber.value = phoneNumberField ? phoneNumberField.value : '';
+                } else {
+                    manualPhoneInput.classList.add('hidden');
+                    finalPhoneNumber.value = '{{ user.mobile_no|default:"" }}';
+                }
+            });
+        });
+        
+        // Update final phone number when manual input changes
+        if (phoneNumberField) {
+            phoneNumberField.addEventListener('input', function() {
+                const selectedOption = document.querySelector('input[name="phone_option"]:checked');
+                if (selectedOption && selectedOption.value === 'manual') {
+                    finalPhoneNumber.value = this.value;
+                }
+            });
+        }
+        
+        // Set up address option toggles
+        const addressOptions = document.querySelectorAll('input[name="address_option"]');
+        const manualAddressInput = document.getElementById('manual-address-input');
+        const finalDeliveryAddress = document.getElementById('final_delivery_address');
+        const deliveryAddressField = document.querySelector('textarea[name="delivery_address"]');
+        
+        addressOptions.forEach(option => {
+            option.addEventListener('change', function() {
+                if (this.value === 'manual') {
+                    manualAddressInput.classList.remove('hidden');
+                    finalDeliveryAddress.value = deliveryAddressField ? deliveryAddressField.value : '';
+                } else {
+                    manualAddressInput.classList.add('hidden');
+                    finalDeliveryAddress.value = '{{ user.delivery_address|default:"" }}';
+                }
+                updateOrderSummary(); // Update delivery fee when address changes
+            });
+        });
+        
+        // Update final delivery address when manual input changes
+        if (deliveryAddressField) {
+            deliveryAddressField.addEventListener('input', function() {
+                const selectedOption = document.querySelector('input[name="address_option"]:checked');
+                if (selectedOption && selectedOption.value === 'manual') {
+                    finalDeliveryAddress.value = this.value;
+                }
+                updateOrderSummary(); // Update delivery fee when address changes
+            });
+        }
         
         // Also allow form submission on Enter key in certain fields
         orderForm.addEventListener('keypress', function(e) {

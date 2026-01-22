@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Notification - {{ bakery_name }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #8f3232;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+        .content {
+            background-color: #f9f9f9;
+            padding: 30px;
+            border-radius: 0 0 8px 8px;
+        }
+        .info-box {
+            background-color: #e8f4fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 14px;
+        }
+        .security-notice {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ bakery_name }}</h1>
+        <h2>Login Notification</h2>
+    </div>
+    
+    <div class="content">
+        <p>Hello {{ customer_name }},</p>
+        
+        <p>We wanted to let you know that your account was successfully accessed.</p>
+        
+        <div class="info-box">
+            <h3>Login Details:</h3>
+            <ul>
+                <li><strong>Time:</strong> {{ login_time|date:"F d, Y at g:i A" }}</li>
+                <li><strong>IP Address:</strong> {{ ip_address }}</li>
+                <li><strong>Device:</strong> {{ user_agent|truncatechars:50 }}</li>
+            </ul>
+        </div>
+        
+        <div class="security-notice">
+            <h3>🔒 Security Notice</h3>
+            <p>If this wasn't you, please contact us immediately and consider changing your password.</p>
+        </div>
+        
+        <p>Thank you for choosing {{ bakery_name }}!</p>
+        
+        <p>Best regards,<br>
+        The {{ bakery_name }} Team</p>
+    </div>
+    
+    <div class="footer">
+        <p>This is an automated security notification from {{ bakery_name }}.</p>
+        <p>If you have any questions, please contact our support team.</p>
+    </div>
+</body>
+</html>

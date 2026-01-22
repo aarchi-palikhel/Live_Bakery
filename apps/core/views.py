@@ -1,303 +1,341 @@
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.conf import settings
+from django.shortcuts import render
 from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth import get_user_model
-from django.db.models import Sum, Count, Avg
+from django.contrib.admin.views.decorators import staff_member_required
+from django.db.models import Sum, Count, Q, F
 from django.utils import timezone
-from django.apps import apps
-from datetime import timedelta
+from datetime import timedelta, datetime
 import json
 
-from .forms import ContactForm
-from .models import ContactMessage
-
-
-@require_http_methods(["POST"])
-def clear_notification(request):
-    """Clear session notification after displaying"""
-    if 'notification' in request.session:
-        del request.session['notification']
-        request.session.save()
-    
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({'success': True})
-    
-    return JsonResponse({'success': True})
-
+# Import models with proper app references
+try:
+    from orders.models import Order, OrderItem
+    from products.models import Product, Category
+    from users.models import CustomUser
+    from payment.models import PaymentTransaction
+    from core.models import ContactMessage
+    from core.forms import ContactForm
+except ImportError:
+    # Fallback imports for when running from different contexts
+    from apps.orders.models import Order, OrderItem
+    from apps.products.models import Product, Category
+    from apps.users.models import CustomUser
+    from apps.payment.models import PaymentTransaction
+    from apps.core.models import ContactMessage
+    from apps.core.forms import ContactForm
 
 def home(request):
-    """Home page with featured products"""
-    from products.models import Product
-    
+    """Home page view"""
+    # Fetch featured products to display on home page
     featured_products = Product.objects.filter(
         is_featured=True, 
-        available=True, 
-        in_stock=True
-    ).prefetch_related('images')[:4]
+        available=True
+    ).prefetch_related('images').order_by('-created_at')[:8]  # Limit to 8 featured products
     
     context = {
         'featured_products': featured_products,
     }
     return render(request, 'core/home.html', context)
 
-
 def about(request):
-    """About page"""
+    """About page view"""
     return render(request, 'core/about.html')
 
-
 def contact(request):
-    """Contact form view"""
+    """Contact page view"""
     if request.method == 'POST':
         form = ContactForm(request.POST)
-        
         if form.is_valid():
-            contact_message = form.save(commit=False)
-            
-            # Capture additional information
-            if request.META.get('HTTP_X_FORWARDED_FOR'):
-                contact_message.ip_address = request.META.get('HTTP_X_FORWARDED_FOR').split(',')[0]
-            else:
-                contact_message.ip_address = request.META.get('REMOTE_ADDR')
-            
-            contact_message.user_agent = request.META.get('HTTP_USER_AGENT', '')[:500]
-            contact_message.save()
-            
-            # Optional: Send email notification
             try:
-                if hasattr(settings, 'ADMIN_EMAIL'):
-                    from django.core.mail import send_mail
-                    send_mail(
-                        subject=f"New Contact Message: {contact_message.get_subject_display()}",
-                        message=f"""
-New contact message received:
-
-From: {contact_message.full_name}
-Email: {contact_message.email}
-Phone: {contact_message.phone or 'Not provided'}
-Subject: {contact_message.get_subject_display()}
-
-Message:
-{contact_message.message}
-
-IP Address: {contact_message.ip_address}
-Received: {contact_message.created_at}
-                        """,
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[settings.ADMIN_EMAIL],
-                        fail_silently=True,
-                    )
+                # Get client IP and user agent
+                x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+                if x_forwarded_for:
+                    ip = x_forwarded_for.split(',')[0]
+                else:
+                    ip = request.META.get('REMOTE_ADDR')
+                
+                contact_message = form.save(commit=False)
+                contact_message.ip_address = ip
+                contact_message.user_agent = request.META.get('HTTP_USER_AGENT', '')
+                contact_message.save()
+                
+                # Return success response
+                return render(request, 'core/contact.html', {
+                    'form': ContactForm(),  # Fresh form
+                    'success': True,
+                    'message': 'Thank you for your message! We will get back to you soon.'
+                })
             except Exception as e:
-                # Silently fail if email sending doesn't work
-                print(f"Email sending failed: {e}")
-            
-            messages.success(request, 'Thank you for your message! We will get back to you soon.')
-            return redirect('core:contact')
-        
-        messages.error(request, 'Please correct the errors below.')
+                # Log the error and show user-friendly message
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error saving contact message: {e}")
+                
+                return render(request, 'core/contact.html', {
+                    'form': form,
+                    'error': True,
+                    'message': 'Sorry, there was an error sending your message. Please try again.'
+                })
+        else:
+            # Form has validation errors
+            return render(request, 'core/contact.html', {
+                'form': form,
+                'error': True,
+                'message': 'Please correct the errors below and try again.'
+            })
     else:
         form = ContactForm()
     
     return render(request, 'core/contact.html', {'form': form})
 
+def clear_notification(request):
+    """Clear notification view - clears session notifications and marks contact messages as read"""
+    if request.method == 'POST':
+        try:
+            # Clear session notification if it exists
+            notification_cleared = False
+            if 'notification' in request.session:
+                del request.session['notification']
+                notification_cleared = True
+            
+            # Also mark any unread contact messages as read (admin functionality)
+            if request.user.is_authenticated and request.user.is_staff:
+                updated_count = ContactMessage.objects.filter(status='new').update(status='read')
+                if updated_count > 0:
+                    return JsonResponse({
+                        'success': True, 
+                        'message': f'Cleared session notification and marked {updated_count} contact messages as read',
+                        'notification_cleared': notification_cleared,
+                        'contact_messages_updated': updated_count
+                    })
+            
+            if notification_cleared:
+                return JsonResponse({
+                    'success': True, 
+                    'message': 'Session notification cleared',
+                    'notification_cleared': True,
+                    'contact_messages_updated': 0
+                })
+            else:
+                return JsonResponse({
+                    'success': True, 
+                    'message': 'No notification to clear',
+                    'notification_cleared': False,
+                    'contact_messages_updated': 0
+                })
+                
+        except Exception as e:
+            return JsonResponse({
+                'success': False, 
+                'message': f'Error clearing notifications: {str(e)}'
+            })
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
 def dashboard_callback(request, context):
-    """Dashboard context callback for Unfold admin"""
-    User = get_user_model()
-    
-    # Initialize data dictionary
-    dashboard_data = {
-        'users_count': User.objects.count(),
-        'recent_users': User.objects.order_by('-date_joined')[:5],
-    }
-    
-    # Safely check for Order model
+    """Dashboard callback for admin interface - returns context data for admin dashboard"""
+    # This function should return a dictionary of context data for the admin dashboard
+    # It's called by Django Unfold to provide additional context
     try:
-        Order = apps.get_model('orders', 'Order')
-        dashboard_data['orders_count'] = Order.objects.count()
-        dashboard_data['pending_orders'] = Order.objects.filter(status='pending').count()
-    except (LookupError, AttributeError) as e:
-        print(f"Orders app not available: {e}")
-        dashboard_data['orders_count'] = 0
-        dashboard_data['pending_orders'] = 0
-    
-    # Safely check for Product model
-    try:
-        Product = apps.get_model('products', 'Product')
-        dashboard_data['products_count'] = Product.objects.count()
-    except (LookupError, AttributeError) as e:
-        print(f"Products app not available: {e}")
-        dashboard_data['products_count'] = 0
-    
-    context.update(dashboard_data)
-    return context
-
-
-def is_staff_or_admin(user):
-    """Check if user is staff or admin"""
-    return user.is_staff or user.is_superuser
-
-
-@login_required
-@require_http_methods(["GET"])
-def dashboard_api(request):
-    """
-    API endpoint for dashboard data
-    Returns comprehensive dashboard statistics
-    Only accessible to staff and admin users
-    """
-    
-    # Check permissions
-    if not is_staff_or_admin(request.user):
-        return JsonResponse({'error': 'Unauthorized'}, status=403)
-    
-    try:
-        # Import models dynamically
-        Order = apps.get_model('orders', 'Order')
-        OrderItem = apps.get_model('orders', 'OrderItem')
-        Product = apps.get_model('products', 'Product')
+        # Get basic statistics for the dashboard
+        total_orders = Order.objects.count()
+        pending_orders = Order.objects.filter(status='pending').count()
+        total_customers = CustomUser.objects.filter(user_type='customer').count()
         
-        # Date range for last 30 days
+        # Get contact message statistics
+        total_contact_messages = ContactMessage.objects.count()
+        new_contact_messages = ContactMessage.objects.filter(status='new').count()
+        unread_contact_messages = ContactMessage.objects.filter(status__in=['new', 'read']).count()
+        
+        # Update the existing context with our custom data
+        context.update({
+            'custom_dashboard': True,
+            'bakery_name': 'Live Bakery',
+            'location': 'Kamalbinayak, Bhaktapur',
+            'total_orders': total_orders,
+            'pending_orders': pending_orders,
+            'total_customers': total_customers,
+            'total_contact_messages': total_contact_messages,
+            'new_contact_messages': new_contact_messages,
+            'unread_contact_messages': unread_contact_messages,
+        })
+        
+        return context
+        
+    except Exception as e:
+        # Return minimal context if there's an error
+        context.update({
+            'custom_dashboard': True,
+            'bakery_name': 'Live Bakery',
+            'location': 'Kamalbinayak, Bhaktapur',
+            'error': str(e)
+        })
+        return context
+
+@staff_member_required
+def dashboard_api(request):
+    """API endpoint for dashboard data"""
+    try:
+        # Get date range for last 30 days
         end_date = timezone.now()
         start_date = end_date - timedelta(days=30)
         
-        # 1. Total Revenue (from paid orders)
-        paid_orders = Order.objects.filter(
-            payment_status='paid',
-            created_at__range=[start_date, end_date]
-        )
-        total_revenue = paid_orders.aggregate(total=Sum('total_amount'))['total'] or 0
+        # Basic statistics
+        total_orders = Order.objects.count()
+        total_revenue = Order.objects.filter(payment_status='paid').aggregate(
+            total=Sum('total_amount')
+        )['total'] or 0
         
-        # 2. Order Statistics
-        total_orders = Order.objects.filter(created_at__range=[start_date, end_date]).count()
-        pending_orders = Order.objects.filter(
-            status='pending',
-            created_at__range=[start_date, end_date]
-        ).count()
-        
-        # 3. Product Count
+        pending_orders = Order.objects.filter(status='pending').count()
         total_products = Product.objects.filter(available=True).count()
+        total_customers = CustomUser.objects.filter(user_type='customer').count()
         
-        # 4. Daily Revenue (fill gaps with 0)
+        # Contact message statistics
+        total_contact_messages = ContactMessage.objects.count()
+        new_contact_messages = ContactMessage.objects.filter(status='new').count()
+        unread_contact_messages = ContactMessage.objects.filter(status__in=['new', 'read']).count()
+        replied_contact_messages = ContactMessage.objects.filter(status='replied').count()
+        
+        # Cake orders (orders with cake items)
+        cake_orders = OrderItem.objects.filter(
+            product__is_cake=True
+        ).values('order').distinct().count()
+        
+        # Daily revenue for last 30 days
         daily_revenue = {}
-        for order in paid_orders.order_by('created_at'):
-            date_str = order.created_at.strftime('%Y-%m-%d')
-            if date_str not in daily_revenue:
-                daily_revenue[date_str] = 0
-            daily_revenue[date_str] += float(order.total_amount)
+        for i in range(30):
+            date = (end_date - timedelta(days=i)).date()
+            date_str = date.strftime('%Y-%m-%d')
+            revenue = Order.objects.filter(
+                payment_status='paid',
+                created_at__date=date
+            ).aggregate(total=Sum('total_amount'))['total'] or 0
+            daily_revenue[date_str] = float(revenue)
         
-        # Fill in missing dates
-        current_date = start_date.date()
-        while current_date <= end_date.date():
-            date_str = current_date.strftime('%Y-%m-%d')
-            if date_str not in daily_revenue:
-                daily_revenue[date_str] = 0
-            current_date = current_date + timedelta(days=1)
+        # Order status distribution
+        order_status = Order.objects.values('status').annotate(
+            count=Count('id')
+        )
+        order_status_dict = {item['status']: item['count'] for item in order_status}
         
-        # Sort by date
-        daily_revenue = dict(sorted(daily_revenue.items()))
+        # Payment methods distribution
+        payment_methods = Order.objects.values('payment_method').annotate(
+            count=Count('id')
+        )
+        payment_methods_dict = {item['payment_method']: item['count'] for item in payment_methods}
         
-        # 5. Order Status Distribution
-        order_status = {
-            'pending': Order.objects.filter(status='pending', created_at__range=[start_date, end_date]).count(),
-            'confirmed': Order.objects.filter(status='confirmed', created_at__range=[start_date, end_date]).count(),
-            'baking': Order.objects.filter(status='baking', created_at__range=[start_date, end_date]).count(),
-            'ready': Order.objects.filter(status='ready', created_at__range=[start_date, end_date]).count(),
-            'completed': Order.objects.filter(status='completed', created_at__range=[start_date, end_date]).count(),
-            'cancelled': Order.objects.filter(status='cancelled', created_at__range=[start_date, end_date]).count(),
-        }
+        # Delivery types distribution
+        delivery_types = Order.objects.values('delivery_type').annotate(
+            count=Count('id')
+        )
+        delivery_types_dict = {item['delivery_type']: item['count'] for item in delivery_types}
         
-        # 6. Payment Methods
-        payment_methods = {}
-        if hasattr(Order, 'PAYMENT_CHOICES'):
-            for payment_choice in Order.PAYMENT_CHOICES:
-                count = Order.objects.filter(
-                    payment_method=payment_choice[0],
-                    created_at__range=[start_date, end_date]
-                ).count()
-                payment_methods[payment_choice[0]] = count
-        else:
-            payment_methods = {'cod': 0, 'esewa': 0}
+        # Top selling products
+        top_products = OrderItem.objects.filter(
+            order__payment_status='paid'
+        ).values('product__name').annotate(
+            quantity_sold=Sum('quantity'),
+            revenue=Sum(F('quantity') * F('price'))
+        ).order_by('-quantity_sold')[:10]
         
-        # 7. Delivery Types
-        delivery_types = {}
-        if hasattr(Order, 'DELIVERY_CHOICES'):
-            for delivery_choice in Order.DELIVERY_CHOICES:
-                count = Order.objects.filter(
-                    delivery_type=delivery_choice[0],
-                    created_at__range=[start_date, end_date]
-                ).count()
-                delivery_types[delivery_choice[0]] = count
-        else:
-            delivery_types = {'delivery': 0, 'pickup': 0}
+        top_products_list = [
+            {
+                'product_name': item['product__name'],
+                'quantity_sold': item['quantity_sold'],
+                'revenue': float(item['revenue'])
+            }
+            for item in top_products
+        ]
         
-        # 8. Top Products
-        top_products = []
-        try:
-            order_items = OrderItem.objects.filter(
-                order__created_at__range=[start_date, end_date]
-            ).values('product__name').annotate(
-                quantity_sold=Sum('quantity'),
-                revenue=Sum('price')
-            ).order_by('-quantity_sold')[:5]
+        # Category performance
+        category_performance = OrderItem.objects.filter(
+            order__payment_status='paid'
+        ).values('product__category__name').annotate(
+            quantity_sold=Sum('quantity'),
+            revenue=Sum(F('quantity') * F('price'))
+        ).order_by('-revenue')[:10]
+        
+        category_performance_list = [
+            {
+                'category_name': item['product__category__name'],
+                'quantity_sold': item['quantity_sold'],
+                'revenue': float(item['revenue'])
+            }
+            for item in category_performance
+        ]
+        
+        # Recent orders
+        recent_orders = Order.objects.select_related('user').prefetch_related(
+            'items__product'
+        ).order_by('-created_at')[:10]
+        
+        recent_orders_list = []
+        for order in recent_orders:
+            user_initials = ''
+            if order.user.first_name and order.user.last_name:
+                user_initials = f"{order.user.first_name[0]}{order.user.last_name[0]}"
+            elif order.user.first_name:
+                user_initials = order.user.first_name[0]
+            elif order.user.username:
+                user_initials = order.user.username[0].upper()
             
-            for item in order_items:
-                top_products.append({
-                    'product_name': item['product__name'],
-                    'quantity_sold': int(item['quantity_sold'] or 0),
-                    'revenue': float(item['revenue'] or 0),
-                })
-        except Exception as e:
-            print(f"Error fetching top products: {e}")
-            top_products = []
+            recent_orders_list.append({
+                'id': order.id,
+                'order_number': order.order_number,
+                'user_name': f"{order.user.first_name} {order.user.last_name}".strip() or order.user.username,
+                'user_initials': user_initials,
+                'total_amount': float(order.total_amount),
+                'status': order.status,
+                'status_display': order.get_status_display(),
+                'payment_status': order.payment_status,
+                'payment_status_display': order.get_payment_status_display(),
+                'delivery_type': order.delivery_type,
+                'created_at': order.created_at.isoformat(),
+                'item_count': order.items.count(),
+            })
         
-        # 9. Recent Orders
-        recent_orders = []
-        try:
-            orders = Order.objects.filter(
-                created_at__range=[start_date, end_date]
-            ).select_related('user').order_by('-created_at')[:10]
-            
-            for order in orders:
-                first_name = order.user.first_name or order.user.username
-                last_name = order.user.last_name or ''
-                initials = (first_name[0] + last_name[0]).upper() if first_name and last_name else first_name[:2].upper()
-                
-                recent_orders.append({
-                    'order_number': getattr(order, 'order_number', f'ORD-{order.id}'),
-                    'user_name': f"{first_name} {last_name}".strip(),
-                    'user_initials': initials,
-                    'total_amount': float(order.total_amount),
-                    'status': order.status,
-                    'status_display': order.get_status_display(),
-                    'payment_status': order.payment_status,
-                    'payment_status_display': order.get_payment_status_display(),
-                    'delivery_type': order.delivery_type,
-                    'created_at': order.created_at.isoformat(),
-                })
-        except Exception as e:
-            print(f"Error fetching recent orders: {e}")
-            recent_orders = []
+        # Recent contact messages
+        recent_contact_messages = ContactMessage.objects.order_by('-created_at')[:10]
         
-        return JsonResponse({
+        recent_contact_list = []
+        for contact in recent_contact_messages:
+            recent_contact_list.append({
+                'id': contact.id,
+                'full_name': contact.full_name,
+                'email': contact.email,
+                'subject': contact.subject,
+                'subject_display': contact.get_subject_display(),
+                'status': contact.status,
+                'status_display': contact.get_status_display(),
+                'message': contact.message[:100] + '...' if len(contact.message) > 100 else contact.message,
+                'created_at': contact.created_at.isoformat(),
+                'days_since_creation': contact.get_days_since_creation(),
+            })
+        
+        # Compile response data
+        data = {
             'total_revenue': float(total_revenue),
             'total_orders': total_orders,
             'pending_orders': pending_orders,
             'total_products': total_products,
+            'total_customers': total_customers,
+            'cake_orders': cake_orders,
+            'total_contact_messages': total_contact_messages,
+            'new_contact_messages': new_contact_messages,
+            'unread_contact_messages': unread_contact_messages,
+            'replied_contact_messages': replied_contact_messages,
             'daily_revenue': daily_revenue,
-            'order_status': order_status,
-            'payment_methods': payment_methods,
-            'delivery_types': delivery_types,
-            'top_products': top_products,
-            'recent_orders': recent_orders,
-        })
-    
+            'order_status': order_status_dict,
+            'payment_methods': payment_methods_dict,
+            'delivery_types': delivery_types_dict,
+            'top_products': top_products_list,
+            'category_performance': category_performance_list,
+            'recent_orders': recent_orders_list,
+            'recent_contact_messages': recent_contact_list,
+        }
+        
+        return JsonResponse(data)
+        
     except Exception as e:
-        import traceback
-        print(f"Dashboard API Error: {traceback.format_exc()}")
         return JsonResponse({
             'error': str(e),
             'message': 'Failed to fetch dashboard data'

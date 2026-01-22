@@ -20,6 +20,9 @@
                 <p><strong>Username:</strong> {{ user.username }}</p>
                 <p><strong>Email:</strong> {{ user.email|default:"Not provided" }}</p>
                 <p><strong>Mobile:</strong> {{ user.mobile_no|default:"Not provided" }}</p>
+                {% if user.delivery_address %}
+                <p><strong>Delivery Address:</strong> {{ user.delivery_address }}</p>
+                {% endif %}
                 <p><strong>User Type:</strong> {% if user.is_staff %}Admin{% else %}Customer{% endif %}</p>
                 <p><strong>Member since:</strong> {{ user.date_joined|date:"F j, Y" }}</p>
             </div>

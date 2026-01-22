@@ -37,7 +37,7 @@ class CustomUserAdmin(UserAdmin):
             'fields': ('username', 'password')
         }),
         ('Personal Info', {
-            'fields': ('first_name', 'last_name', 'email', 'mobile_no', 'primary_address')
+            'fields': ('first_name', 'last_name', 'email', 'mobile_no', 'primary_address', 'delivery_address')
         }),
         ('Role & Permissions', {
             'fields': ('user_type', 'is_active', 'is_superuser', 'groups', 'user_permissions')
@@ -196,7 +196,7 @@ class CustomUserAdmin(UserAdmin):
 # ==================== CUSTOMER ADMIN ====================
 @admin.register(Customer)
 class CustomerAdmin(ModelAdmin):
-    list_display = ['username', 'email', 'mobile_no', 'first_name', 'last_name', 'is_active', 'date_joined']
+    list_display = ['username', 'email', 'mobile_no', 'first_name', 'last_name', 'delivery_address', 'is_active', 'date_joined']
     list_filter = ['is_active', 'date_joined']
     search_fields = ['username', 'email', 'mobile_no', 'first_name', 'last_name']
     ordering = ['-date_joined']
@@ -206,7 +206,7 @@ class CustomerAdmin(ModelAdmin):
             'fields': ('username', 'password')
         }),
         ('Personal Info', {
-            'fields': ('first_name', 'last_name', 'email', 'mobile_no')
+            'fields': ('first_name', 'last_name', 'email', 'mobile_no', 'delivery_address')
         }),
         ('Permissions', {
             'fields': ('is_active', 'groups', 'user_permissions')

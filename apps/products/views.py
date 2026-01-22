@@ -16,8 +16,8 @@ def product_list(request, category_slug=None):
     category = None
     categories = Category.objects.all()
     
-    # Get all available products from database
-    products = Product.objects.filter(available=True).order_by('-is_featured', 'name')
+    # Get all available products from database with optimized queries
+    products = Product.objects.filter(available=True).select_related('category').prefetch_related('images').order_by('-is_featured', 'name')
     
     # Apply category filter if provided
     if category_slug:
@@ -74,16 +74,16 @@ def product_list(request, category_slug=None):
 def product_detail(request, product_id):
     """Display detailed view of a single product"""
     product = get_object_or_404(
-        Product.objects.prefetch_related('images'),
+        Product.objects.select_related('category').prefetch_related('images'),
         id=product_id,
         available=True
     )
     
-    # Get related products (same category, excluding current)
+    # Get related products (same category, excluding current) with optimized query
     related_products = Product.objects.filter(
         category=product.category,
         available=True
-    ).exclude(id=product.id)[:4]
+    ).exclude(id=product.id).select_related('category').prefetch_related('images')[:4]
     
     # Prepare cake customization form data if product is a cake
     cake_form = None
@@ -138,7 +138,7 @@ def product_detail(request, product_id):
 def product_search(request):
     """Handle product search"""
     form = ProductSearchForm(request.GET or None)
-    products = Product.objects.filter(available=True)
+    products = Product.objects.filter(available=True).select_related('category').prefetch_related('images')
     categories = Category.objects.all()
     
     if form.is_valid():

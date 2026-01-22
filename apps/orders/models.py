@@ -11,7 +11,7 @@ class Order(models.Model):
         ('pending', 'Pending'),
         ('confirmed', 'Confirmed'),
         ('baking', 'Baking'),
-        ('ready', 'Ready for Pickup'),
+        ('ready', 'Ready for Pickup/Delivery'),
         ('completed', 'Completed'),
         ('cancelled', 'Cancelled'),
     ]
@@ -34,50 +34,6 @@ class Order(models.Model):
         ('pickup', 'Self Pickup'),
     ]
 
-    # Add these fields to the Order model
-    delivery_type = models.CharField(
-        max_length=20, 
-        choices=DELIVERY_CHOICES, 
-        default='delivery'
-    )
-
-    # Add subtotal field (cart total without delivery)
-    subtotal = models.DecimalField(
-        max_digits=10, 
-        decimal_places=2, 
-        default=0
-    )
-    
-    # Add delivery fee field
-    delivery_fee = models.DecimalField(
-        max_digits=10, 
-        decimal_places=2, 
-        default=0
-    )
-
-    # Payment method - ONLY ONE DEFINITION
-    payment_method = models.CharField(
-        max_length=20, 
-        choices=PAYMENT_CHOICES, 
-        default='cod'
-    )
-
-    # Payment status - CharField with choices
-    payment_status = models.CharField(
-        max_length=20,
-        choices=PAYMENT_STATUS_CHOICES,
-        default='pending'
-    )
-
-    # Add payment transaction reference
-    payment_transaction = models.ForeignKey(
-        'payment.PaymentTransaction',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='orders'
-    )
-    
     # Explicit ID field
     id = models.BigAutoField(primary_key=True)
     
@@ -92,9 +48,50 @@ class Order(models.Model):
     # Status field
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     
-    special_instructions = models.TextField(blank=True)
+    # Delivery fields
+    delivery_type = models.CharField(
+        max_length=20, 
+        choices=DELIVERY_CHOICES, 
+        default='delivery'
+    )
     delivery_address = models.TextField(blank=True)
     phone_number = models.CharField(max_length=15, blank=True)
+
+    # Financial fields
+    subtotal = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=0
+    )
+    
+    delivery_fee = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=0
+    )
+
+    # Payment fields - SINGLE DEFINITION
+    payment_method = models.CharField(
+        max_length=20, 
+        choices=PAYMENT_CHOICES, 
+        default='cod'
+    )
+
+    payment_status = models.CharField(
+        max_length=20,
+        choices=PAYMENT_STATUS_CHOICES,
+        default='pending'
+    )
+
+    payment_transaction = models.ForeignKey(
+        'payment.PaymentTransaction',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='orders'
+    )
+    
+    special_instructions = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -102,6 +99,12 @@ class Order(models.Model):
         ordering = ['-created_at']
         verbose_name = 'Order'
         verbose_name_plural = 'Orders'
+        indexes = [
+            models.Index(fields=['user', '-created_at']),
+            models.Index(fields=['payment_status', 'status']),
+            models.Index(fields=['status', '-created_at']),
+            models.Index(fields=['payment_method', 'payment_status']),
+        ]
     
     def save(self, *args, **kwargs):
         # SIMPLIFIED save method - only generate order number
@@ -214,6 +217,7 @@ class OrderItem(models.Model):
         verbose_name_plural = 'Order Items'
         indexes = [
             models.Index(fields=['order', 'product']),
+            models.Index(fields=['order', '-created_at']),
         ]
     
     def __str__(self):

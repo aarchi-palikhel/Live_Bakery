@@ -435,7 +435,7 @@
                                 {% endif %}
                                 
                                 {% if order.status == 'completed' %}
-                                <a href="{% url 'orders:order_invoice' order.id %}" 
+                                <a href="{% url 'orders:order_invoice_pdf' order.id %}" 
                                    class="block w-full text-center px-4 py-2 bg-[#8f3232] text-white rounded-lg hover:bg-[#7a2a2a] font-medium transition duration-200">
                                     Download Invoice
                                 </a>

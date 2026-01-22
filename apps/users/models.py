@@ -2,6 +2,9 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import RegexValidator
+import secrets
+from django.utils import timezone
+from datetime import timedelta
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, username, email, password=None, **extra_fields):
@@ -27,12 +30,27 @@ class CustomUserManager(BaseUserManager):
             extra_fields['is_superuser'] = True
         
         return self.create_user(username, email, password, **extra_fields)
+    
+    def get_by_natural_key(self, username):
+        """
+        Allow authentication using either username or email
+        """
+        return self.get(
+            models.Q(username__iexact=username) | models.Q(email__iexact=username)
+        )
 
 class CustomUser(AbstractUser):
     USER_TYPE_CHOICES = (
         ('customer', 'Customer'),
         ('staff', 'Staff'),
         ('owner', 'Owner/Superuser'),
+    )
+    
+    # Override email field to make it required
+    email = models.EmailField(
+        _('email address'),
+        unique=True,
+        help_text=_('Required. Enter a valid email address.')
     )
     
     phone_regex = RegexValidator(
@@ -58,6 +76,12 @@ class CustomUser(AbstractUser):
         _('primary address'),
         blank=True,
         help_text=_('Primary address for staff members')
+    )
+    
+    delivery_address = models.TextField(
+        _('delivery address'),
+        blank=True,
+        help_text=_('Default delivery address for customers')
     )
     
     created_at = models.DateTimeField(auto_now_add=True)
@@ -115,6 +139,67 @@ class CustomUser(AbstractUser):
         Prevent setting is_staff directly - it should be controlled by user_type.
         """
         pass
+
+    def create_remember_token(self):
+        """Create a new remember me token for this user"""
+        # Clean up old tokens first
+        RememberMeToken.objects.filter(user=self).delete()
+        
+        # Create new token
+        token = RememberMeToken.objects.create(
+            user=self,
+            token=secrets.token_urlsafe(32),
+            expires_at=timezone.now() + timedelta(days=14)  # 2 weeks
+        )
+        return token.token
+    
+    def get_remember_token(self, token):
+        """Get valid remember me token for this user"""
+        try:
+            token_obj = RememberMeToken.objects.get(
+                user=self,
+                token=token,
+                expires_at__gt=timezone.now()
+            )
+            return token_obj
+        except RememberMeToken.DoesNotExist:
+            return None
+    
+    def clear_remember_tokens(self):
+        """Clear all remember me tokens for this user"""
+        count = RememberMeToken.objects.filter(user=self).count()
+        RememberMeToken.objects.filter(user=self).delete()
+        return count
+
+
+class RememberMeToken(models.Model):
+    """Model to store remember me tokens"""
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='remember_tokens')
+    token = models.CharField(max_length=255, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    last_used = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        verbose_name = 'Remember Me Token'
+        verbose_name_plural = 'Remember Me Tokens'
+        indexes = [
+            models.Index(fields=['token']),
+            models.Index(fields=['user', 'expires_at']),
+        ]
+    
+    def __str__(self):
+        return f"Remember token for {self.user.username}"
+    
+    def is_valid(self):
+        """Check if token is still valid"""
+        return timezone.now() < self.expires_at
+    
+    def use_token(self):
+        """Mark token as used and update last_used timestamp"""
+        self.last_used = timezone.now()
+        self.save(update_fields=['last_used'])
+
 
 # ==================== CUSTOMER CLASS ====================
 class CustomerManager(CustomUserManager):

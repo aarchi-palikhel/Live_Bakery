@@ -42,8 +42,8 @@ def create_order_with_payment(request):
             
             # Parse form data
             delivery_type = request.POST.get('delivery_type', 'delivery')
-            delivery_address = request.POST.get('delivery_address', '')
-            phone_number = request.POST.get('phone_number', '')
+            delivery_address = request.POST.get('final_delivery_address', '') or request.POST.get('delivery_address', '')
+            phone_number = request.POST.get('final_phone_number', '') or request.POST.get('phone_number', '')
             special_instructions = request.POST.get('special_instructions', '')
             payment_method = request.POST.get('payment_method', 'cod')
             
@@ -316,7 +316,10 @@ def order_create(request):
                         # Get form data
                         delivery_type = order_form.cleaned_data.get('delivery_type', 'delivery')
                         payment_method = order_form.cleaned_data.get('payment_method', 'cod')
-                        phone_number = order_form.cleaned_data.get('phone_number', '')
+                        
+                        # Use final values from hidden fields if available, otherwise use form data
+                        phone_number = request.POST.get('final_phone_number', '') or order_form.cleaned_data.get('phone_number', '')
+                        address = request.POST.get('final_delivery_address', '') or order_form.cleaned_data.get('delivery_address', '')
                         special_instructions = order_form.cleaned_data.get('special_instructions', '')
                         
                         print(f"DEBUG: Creating order for user {request.user.id}")
@@ -584,8 +587,8 @@ def order_list(request):
     storage = get_messages(request)
     storage.used = True
     
-    # Get all orders for the user
-    all_orders = Order.objects.filter(user=request.user).select_related('user').order_by('-created_at')
+    # Get all orders for the user with optimized queries
+    all_orders = Order.objects.filter(user=request.user).select_related('user').prefetch_related('items__product').order_by('-created_at')
     
     # Filter by status if provided in URL
     status = request.GET.get('status')
@@ -594,32 +597,33 @@ def order_list(request):
     else:
         orders = all_orders
     
-    # Calculate counts for statistics
-    total_orders = all_orders.count()
-    completed_count = all_orders.filter(status='completed').count()
-    pending_count = all_orders.filter(status='pending').count()
-    confirmed_count = all_orders.filter(status='confirmed').count()
-    baking_count = all_orders.filter(status='baking').count()
-    ready_count = all_orders.filter(status='ready').count()
-    cancelled_count = all_orders.filter(status='cancelled').count()
+    # Use database aggregation for counts instead of multiple queries
+    from django.db.models import Count, Case, When, IntegerField
+    
+    status_counts = all_orders.aggregate(
+        total_orders=Count('id'),
+        completed_count=Count(Case(When(status='completed', then=1), output_field=IntegerField())),
+        pending_count=Count(Case(When(status='pending', then=1), output_field=IntegerField())),
+        confirmed_count=Count(Case(When(status='confirmed', then=1), output_field=IntegerField())),
+        baking_count=Count(Case(When(status='baking', then=1), output_field=IntegerField())),
+        ready_count=Count(Case(When(status='ready', then=1), output_field=IntegerField())),
+        cancelled_count=Count(Case(When(status='cancelled', then=1), output_field=IntegerField())),
+    )
     
     # Active orders = pending + confirmed + baking + ready
-    active_count = pending_count + confirmed_count + baking_count + ready_count
-    
-    # Calculate delivery fees for each order
-    for order in orders:
-        order.display_delivery_fee = calculate_delivery_fee(order.delivery_address)
+    active_count = (status_counts['pending_count'] + status_counts['confirmed_count'] + 
+                   status_counts['baking_count'] + status_counts['ready_count'])
     
     context = {
         'orders': orders,
-        'total_orders': total_orders,
-        'completed_count': completed_count,
-        'pending_count': pending_count,
+        'total_orders': status_counts['total_orders'],
+        'completed_count': status_counts['completed_count'],
+        'pending_count': status_counts['pending_count'],
         'active_count': active_count,
-        'confirmed_count': confirmed_count,
-        'baking_count': baking_count,
-        'ready_count': ready_count,
-        'cancelled_count': cancelled_count,
+        'confirmed_count': status_counts['confirmed_count'],
+        'baking_count': status_counts['baking_count'],
+        'ready_count': status_counts['ready_count'],
+        'cancelled_count': status_counts['cancelled_count'],
     }
     
     return render(request, 'orders/order_list.html', context)
@@ -628,11 +632,15 @@ def order_list(request):
 @customer_required
 def order_detail(request, order_id):
     """Display order details"""
-    order = get_object_or_404(Order, id=order_id, user=request.user)
+    order = get_object_or_404(
+        Order.objects.select_related('user', 'payment_transaction').prefetch_related('items__product'),
+        id=order_id, 
+        user=request.user
+    )
     
     # VERIFY PAYMENT STATUS WITH ACTUAL PAYMENT TRANSACTIONS
-    # Get all payment transactions for this order
-    payment_transactions = order.payment_transactions.all().order_by('-created_at')
+    # Get all payment transactions for this order with optimized query
+    payment_transactions = order.payment_transactions.all().select_related('order').order_by('-created_at')
     
     # If order shows as paid but latest payment transaction shows failed, fix it
     if order.payment_status == 'paid' or order.payment_status == True:

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reply from Live Bakery</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+        .content {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border: 1px solid #ddd;
+        }
+        .footer {
+            background-color: #333;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            border-radius: 0 0 8px 8px;
+            font-size: 12px;
+        }
+        .original-message {
+            background-color: #e8f5e8;
+            padding: 15px;
+            border-left: 4px solid #4CAF50;
+            margin: 15px 0;
+        }
+        .reply-message {
+            background-color: white;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        .signature {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ bakery_name }}</h1>
+        <p>{{ bakery_location }}</p>
+    </div>
+    
+    <div class="content">
+        <h2>Dear {{ customer_name }},</h2>
+        
+        <p>Thank you for contacting Live Bakery. We have received your message and are pleased to respond to your inquiry.</p>
+        
+        <div class="original-message">
+            <h3>Your Original Message:</h3>
+            <p>{{ original_message }}</p>
+        </div>
+        
+        <div class="reply-message">
+            <h3>Our Response:</h3>
+            <p>{{ reply_message|linebreaks }}</p>
+        </div>
+        
+        <div class="signature">
+            <p>Best regards,<br>
+            <strong>{{ admin_name }}</strong><br>
+            Live Bakery Team</p>
+        </div>
+        
+        <p>If you have any further questions or need additional assistance, please don't hesitate to contact us again.</p>
+    </div>
+    
+    <div class="footer">
+        <p>Live Bakery - Kamalbinayak, Bhaktapur<br>
+        This is an automated response to your contact form submission.</p>
+    </div>
+</body>
+</html>

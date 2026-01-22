@@ -26,7 +26,7 @@ class CustomerCreationForm(UserCreationForm):
         required=True,
         widget=forms.EmailInput(attrs={
             'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8f3232]',
-            'placeholder': 'Enter your email'
+            'placeholder': 'Enter your email address'
         })
     )
     mobile_no = forms.CharField(
@@ -36,10 +36,18 @@ class CustomerCreationForm(UserCreationForm):
             'placeholder': 'Optional: +9779841234567'
         })
     )
+    delivery_address = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8f3232]',
+            'placeholder': 'Enter your delivery address (optional)',
+            'rows': 3
+        })
+    )
 
     class Meta:
         model = Customer
-        fields = ['username', 'first_name', 'last_name', 'email', 'mobile_no', 'password1', 'password2']
+        fields = ['username', 'first_name', 'last_name', 'email', 'mobile_no', 'delivery_address', 'password1', 'password2']
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

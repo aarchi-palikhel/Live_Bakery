@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Status Update - {{ bakery_name }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #8f3232;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+        .content {
+            background-color: #f9f9f9;
+            padding: 30px;
+            border-radius: 0 0 8px 8px;
+        }
+        .status-box {
+            background-color: #e8f4fd;
+            border-left: 4px solid #2196F3;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .status-confirmed {
+            background-color: #e8f5e8;
+            border-left-color: #4caf50;
+        }
+        .status-baking {
+            background-color: #fff3e0;
+            border-left-color: #ff9800;
+        }
+        .status-ready {
+            background-color: #e8f5e8;
+            border-left-color: #4caf50;
+        }
+        .status-completed {
+            background-color: #f3e5f5;
+            border-left-color: #9c27b0;
+        }
+        .status-cancelled {
+            background-color: #ffebee;
+            border-left-color: #f44336;
+        }
+        .order-details {
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .order-items {
+            margin: 15px 0;
+        }
+        .order-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .order-item:last-child {
+            border-bottom: none;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 14px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #8f3232;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status-icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ bakery_name }}</h1>
+        <h2>Order Status Update</h2>
+    </div>
+    
+    <div class="content">
+        <p>Hello {{ customer_name }},</p>
+        
+        <p>We have an update on your order!</p>
+        
+        <div class="status-box status-{{ order.status }}">
+            <h3>
+                {% if order.status == 'confirmed' %}
+                    <span class="status-icon">✅</span>Order Confirmed
+                {% elif order.status == 'baking' %}
+                    <span class="status-icon">👨‍🍳</span>Your Order is Being Prepared
+                {% elif order.status == 'ready' %}
+                    <span class="status-icon">📦</span>Order Ready for {{ order.get_delivery_type_display }}
+                {% elif order.status == 'completed' %}
+                    <span class="status-icon">🎉</span>Order Completed
+                {% elif order.status == 'cancelled' %}
+                    <span class="status-icon">❌</span>Order Cancelled
+                {% else %}
+                    <span class="status-icon">📋</span>Order Status: {{ order.get_status_display }}
+                {% endif %}
+            </h3>
+            
+            {% if order.status == 'confirmed' %}
+                <p>Great news! We have confirmed your order and it will be processed soon.</p>
+            {% elif order.status == 'baking' %}
+                <p>Our bakers are now working on your delicious order. We'll notify you when it's ready!</p>
+            {% elif order.status == 'ready' %}
+                {% if order.delivery_type == 'pickup' %}
+                    <p>Your order is ready for pickup! Please visit our bakery at your convenience.</p>
+                    <p><strong>Pickup Address:</strong> {{ bakery_location }}</p>
+                {% else %}
+                    <p>Your order is ready and will be delivered to your address soon!</p>
+                {% endif %}
+            {% elif order.status == 'completed' %}
+                <p>Your order has been completed successfully! Thank you for choosing {{ bakery_name }}.</p>
+                <p>We hope you enjoyed your delicious treats! 🍰</p>
+            {% elif order.status == 'cancelled' %}
+                <p>Unfortunately, your order has been cancelled. If you have any questions, please contact us.</p>
+            {% endif %}
+        </div>
+        
+        <div class="order-details">
+            <h3>Order Details</h3>
+            <p><strong>Order Number:</strong> {{ order.order_number }}</p>
+            <p><strong>Order Date:</strong> {{ order.created_at|date:"F d, Y at g:i A" }}</p>
+            <p><strong>Total Amount:</strong> Rs. {{ order.total_amount }}</p>
+            <p><strong>Payment Method:</strong> {{ order.get_payment_method_display }}</p>
+            <p><strong>Payment Status:</strong> {{ order.get_payment_status_display }}</p>
+            <p><strong>Delivery Type:</strong> {{ order.get_delivery_type_display }}</p>
+            
+            {% if order.delivery_address %}
+                <p><strong>Delivery Address:</strong> {{ order.delivery_address }}</p>
+            {% endif %}
+            
+            {% if order.phone_number %}
+                <p><strong>Contact Number:</strong> {{ order.phone_number }}</p>
+            {% endif %}
+            
+            <div class="order-items">
+                <h4>Items Ordered:</h4>
+                {% for item in order.items.all %}
+                    <div class="order-item">
+                        <strong>{{ item.product.name }}</strong> - Quantity: {{ item.quantity }} - Rs. {{ item.total_price }}
+                        {% if item.is_cake %}
+                            <br><small style="color: #666;">
+                                🎂 Cake Details:
+                                {% if item.cake_flavor %} Flavor: {{ item.display_flavor }}{% endif %}
+                                {% if item.cake_weight %} | Weight: {{ item.display_weight }}{% endif %}
+                                {% if item.cake_tiers %} | Tiers: {{ item.cake_tiers }}{% endif %}
+                                {% if item.message_on_cake %} | Message: "{{ item.message_on_cake }}"{% endif %}
+                                {% if item.delivery_date %} | Delivery Date: {{ item.delivery_date }}{% endif %}
+                            </small>
+                        {% endif %}
+                        {% if item.special_instructions %}
+                            <br><small style="color: #666;">Special Instructions: {{ item.special_instructions }}</small>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        {% if order.status == 'ready' and order.delivery_type == 'pickup' %}
+            <div style="text-align: center; margin: 20px 0;">
+                <p><strong>Pickup Information:</strong></p>
+                <p>{{ bakery_name }}<br>
+                {{ bakery_location }}<br>
+                Please bring your order number: <strong>{{ order.order_number }}</strong></p>
+            </div>
+        {% endif %}
+        
+        {% if order.special_instructions %}
+            <div class="order-details">
+                <h4>Special Instructions:</h4>
+                <p>{{ order.special_instructions }}</p>
+            </div>
+        {% endif %}
+        
+        <p>If you have any questions about your order, please don't hesitate to contact us.</p>
+        
+        <p>Thank you for choosing {{ bakery_name }}!</p>
+        
+        <p>Best regards,<br>
+        The {{ bakery_name }} Team</p>
+    </div>
+    
+    <div class="footer">
+        <p>This is an automated notification from {{ bakery_name }}.</p>
+        <p>{{ bakery_location }}</p>
+        <p>If you have any questions, please contact our support team.</p>
+    </div>
+</body>
+</html>

@@ -3,7 +3,7 @@
 
 {% block extrahead %}
     {{ block.super }}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
+    <script src="{% static 'js/chart.js' %}"></script>
     <style>
         :root {
             --primary: #4CAF50;
@@ -32,18 +32,21 @@
             background: white;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-align: center;
         }
 
         .dashboard-header h1 {
             margin: 0;
             color: var(--dark);
             font-size: 28px;
+            font-weight: bold;
         }
 
         .dashboard-header p {
-            margin: 5px 0 0 0;
+            margin: 10px 0 0 0;
             color: #666;
-            font-size: 14px;
+            font-size: 16px;
+            font-weight: bold;
         }
 
         .stats-grid {
@@ -221,6 +224,26 @@
             color: #721c24;
         }
 
+        .status-new {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .status-read {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-replied {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-closed {
+            background-color: #e2e3e5;
+            color: #383d41;
+        }
+
         .payment-pending {
             background-color: #fff3cd;
             color: #856404;
@@ -255,45 +278,6 @@
             font-size: 12px;
         }
 
-        .quick-links {
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
-        }
-
-        .quick-links h3 {
-            margin: 0 0 15px 0;
-            color: var(--dark);
-            font-size: 18px;
-        }
-
-        .links-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
-        }
-
-        .quick-link {
-            display: inline-block;
-            padding: 10px 15px;
-            background: var(--light);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 12px;
-            transition: all 0.3s ease;
-        }
-
-        .quick-link:hover {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
         .refresh-button {
             background: var(--primary);
             color: white;
@@ -310,25 +294,6 @@
             background: #45a049;
         }
 
-        .alert {
-            padding: 15px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            font-size: 13px;
-        }
-
-        .alert-info {
-            background-color: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-
-        .alert-warning {
-            background-color: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-
         .no-data {
             text-align: center;
             padding: 40px;
@@ -336,43 +301,83 @@
         }
 
         @media (max-width: 768px) {
+            .dashboard-container {
+                padding: 10px;
+            }
+
             .stats-grid {
                 grid-template-columns: 1fr;
+                gap: 15px;
             }
 
             .charts-grid {
                 grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .dashboard-header {
+                padding: 15px;
             }
 
             .dashboard-header h1 {
                 font-size: 22px;
             }
 
+            .dashboard-header p {
+                font-size: 14px;
+            }
+
             .stat-value {
                 font-size: 24px;
             }
+
+            .chart-container {
+                padding: 15px;
+            }
+
+            .chart-container h3 {
+                font-size: 16px;
+            }
+
+            .orders-table {
+                overflow-x: auto;
+            }
+
+            .orders-table table {
+                min-width: 600px;
+            }
+
+            .orders-table th,
+            .orders-table td {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
         }
 
-        .loading {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 300px;
-            color: #999;
-        }
+        @media (max-width: 480px) {
+            .dashboard-header h1 {
+                font-size: 18px;
+            }
 
-        .spinner {
-            border: 4px solid var(--light);
-            border-top: 4px solid var(--primary);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-        }
+            .dashboard-header p {
+                font-size: 12px;
+            }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            .stat-value {
+                font-size: 20px;
+            }
+
+            .stat-label {
+                font-size: 10px;
+            }
+
+            .chart-container {
+                padding: 10px;
+            }
+
+            .chart-container h3 {
+                font-size: 14px;
+            }
         }
     </style>
 {% endblock %}
@@ -382,13 +387,13 @@
     <div class="dashboard-container">
         <!-- Header -->
         <div class="dashboard-header">
-            <h1>📊 Admin Dashboard</h1>
+            <h1>Live Bakery Admin Dashboard</h1>
             <p>Welcome back! Here's what's happening with your bakery today.</p>
         </div>
 
         <!-- Quick Actions -->
         {% if perms.orders.add_order or perms.products.add_product %}
-        <button class="refresh-button" onclick="location.reload()">🔄 Refresh Dashboard</button>
+        <button class="refresh-button" onclick="location.reload()">Refresh Dashboard</button>
         {% endif %}
 
         <!-- Statistics Grid -->
@@ -397,7 +402,7 @@
                 <div class="stat-label">Total Revenue</div>
                 <div class="stat-value" id="totalRevenue">Rs. 0</div>
                 <div class="stat-change neutral">
-                    <span id="revenueChange">--</span>
+                    <span id="revenueChange">From paid orders</span>
                 </div>
             </div>
 
@@ -405,7 +410,7 @@
                 <div class="stat-label">Total Orders</div>
                 <div class="stat-value" id="totalOrders">0</div>
                 <div class="stat-change neutral">
-                    <span id="ordersChange">--</span>
+                    <span id="ordersChange">All time</span>
                 </div>
             </div>
 
@@ -418,10 +423,42 @@
             </div>
 
             <div class="stat-card danger">
-                <div class="stat-label">Products</div>
+                <div class="stat-label">Active Products</div>
                 <div class="stat-value" id="totalProducts">0</div>
                 <div class="stat-change neutral">
-                    <span id="productsChange">In inventory</span>
+                    <span id="productsChange">Available for sale</span>
+                </div>
+            </div>
+
+            <div class="stat-card primary">
+                <div class="stat-label">Total Customers</div>
+                <div class="stat-value" id="totalCustomers">0</div>
+                <div class="stat-change neutral">
+                    <span id="customersChange">Registered users</span>
+                </div>
+            </div>
+
+            <div class="stat-card secondary">
+                <div class="stat-label">Cake Orders</div>
+                <div class="stat-value" id="cakeOrders">0</div>
+                <div class="stat-change neutral">
+                    <span id="cakeChange">Custom cakes</span>
+                </div>
+            </div>
+
+            <div class="stat-card warning">
+                <div class="stat-label">Contact Messages</div>
+                <div class="stat-value" id="totalContactMessages">0</div>
+                <div class="stat-change neutral">
+                    <span id="contactChange">Total inquiries</span>
+                </div>
+            </div>
+
+            <div class="stat-card danger">
+                <div class="stat-label">New Messages</div>
+                <div class="stat-value" id="newContactMessages">0</div>
+                <div class="stat-change neutral">
+                    <span id="newContactChange">Unread inquiries</span>
                 </div>
             </div>
         </div>
@@ -430,7 +467,7 @@
         <div class="charts-grid">
             <!-- Revenue Chart -->
             <div class="chart-container">
-                <h3>📈 Revenue Trend (Last 30 Days)</h3>
+                <h3>Revenue Trend (Last 30 Days)</h3>
                 <div class="chart-wrapper">
                     <canvas id="revenueChart"></canvas>
                 </div>
@@ -438,7 +475,7 @@
 
             <!-- Order Status Chart -->
             <div class="chart-container">
-                <h3>📋 Order Status Distribution</h3>
+                <h3>Order Status Distribution</h3>
                 <div class="chart-wrapper">
                     <canvas id="statusChart"></canvas>
                 </div>
@@ -446,7 +483,7 @@
 
             <!-- Payment Method Chart -->
             <div class="chart-container">
-                <h3>💳 Payment Methods</h3>
+                <h3>Payment Methods</h3>
                 <div class="chart-wrapper">
                     <canvas id="paymentChart"></canvas>
                 </div>
@@ -463,15 +500,23 @@
 
         <!-- Top Products -->
         <div class="chart-container">
-            <h3>🏆 Top Selling Products</h3>
+            <h3>Top Selling Products</h3>
             <div class="chart-wrapper">
                 <canvas id="topProductsChart"></canvas>
             </div>
         </div>
 
+        <!-- Category Performance -->
+        <div class="chart-container">
+            <h3>Category Performance</h3>
+            <div class="chart-wrapper">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+
         <!-- Recent Orders Table -->
         <div class="orders-table">
-            <h3>📦 Recent Orders</h3>
+            <h3>Recent Orders</h3>
             <table id="recentOrdersTable">
                 <thead>
                     <tr>
@@ -482,46 +527,46 @@
                         <th>Payment</th>
                         <th>Delivery</th>
                         <th>Date</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="ordersTableBody">
                     <tr>
-                        <td colspan="7" class="no-data">Loading orders...</td>
+                        <td colspan="8" class="no-data">Loading orders...</td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
-        <!-- Quick Links -->
-        <div class="quick-links">
-            <h3>🔗 Quick Links</h3>
-            <div class="links-grid">
-                {% if perms.orders.view_order %}
-                <a href="{% url 'admin:orders_order_changelist' %}" class="quick-link">View All Orders</a>
-                {% endif %}
-                {% if perms.products.view_product %}
-                <a href="{% url 'admin:products_product_changelist' %}" class="quick-link">Manage Products</a>
-                {% endif %}
-                {% if perms.products.view_category %}
-                <a href="{% url 'admin:products_category_changelist' %}" class="quick-link">Categories</a>
-                {% endif %}
-                {% if perms.users.view_customuser %}
-                <a href="{% url 'admin:users_customuser_changelist' %}" class="quick-link">Customers</a>
-                {% endif %}
-                {% if perms.payment.view_paymenttransaction %}
-                <a href="{% url 'admin:payment_paymenttransaction_changelist' %}" class="quick-link">Payments</a>
-                {% endif %}
-                {% if perms.core.view_contactmessage %}
-                <a href="{% url 'admin:core_contactmessage_changelist' %}" class="quick-link">Messages</a>
-                {% endif %}
-            </div>
+        <!-- Recent Contact Messages Table -->
+        <div class="orders-table">
+            <h3>Recent Contact Messages 
+                <a href="/admin/core/contactmessage/" style="float: right; font-size: 14px; color: #4CAF50; text-decoration: none;">View All →</a>
+            </h3>
+            <table id="recentContactTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Subject</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="contactTableBody">
+                    <tr>
+                        <td colspan="6" class="no-data">Loading contact messages...</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
+
     </div>
 
     <script>
         // Configuration
-        const apiBaseUrl = '{% url "admin:index" %}';
-        let revenueChart, statusChart, paymentChart, deliveryChart, topProductsChart;
+        let revenueChart, statusChart, paymentChart, deliveryChart, topProductsChart, categoryChart;
 
         // Color Scheme
         const colors = {
@@ -536,12 +581,12 @@
 
         // Chart Colors
         const chartColors = {
-            pending: '#fff3cd',
-            confirmed: '#d1ecf1',
-            baking: '#e2e3e5',
-            ready: '#d4edda',
-            completed: '#d1ecf1',
-            cancelled: '#f8d7da',
+            pending: '#FFC107',
+            confirmed: '#17A2B8',
+            baking: '#6C757D',
+            ready: '#28A745',
+            completed: '#007BFF',
+            cancelled: '#DC3545',
             cod: '#FF9800',
             esewa: '#4CAF50',
             delivery: '#2196F3',
@@ -551,18 +596,23 @@
         // Fetch Dashboard Data
         async function fetchDashboardData() {
             try {
-                // This will fetch data from your Django backend
-                const data = await fetch('/api/dashboard/', {
+                const response = await fetch('/api/dashboard/', {
                     method: 'GET',
                     headers: {
                         'X-CSRFToken': getCookie('csrftoken'),
                         'Content-Type': 'application/json',
                     }
-                }).then(r => r.json());
+                });
 
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
                 updateStatistics(data);
                 updateCharts(data);
                 updateRecentOrders(data.recent_orders || []);
+                updateRecentContactMessages(data.recent_contact_messages || []);
 
             } catch (error) {
                 console.error('Error fetching dashboard data:', error);
@@ -573,47 +623,31 @@
 
         // Update Statistics
         function updateStatistics(data) {
-            // Total Revenue
-            document.getElementById('totalRevenue').textContent = 
-                'Rs. ' + formatCurrency(data.total_revenue || 0);
-
-            // Total Orders
-            document.getElementById('totalOrders').textContent = 
-                data.total_orders || 0;
-
-            // Pending Orders
-            document.getElementById('pendingOrders').textContent = 
-                data.pending_orders || 0;
-
-            // Total Products
-            document.getElementById('totalProducts').textContent = 
-                data.total_products || 0;
+            document.getElementById('totalRevenue').textContent = 'Rs. ' + formatCurrency(data.total_revenue || 0);
+            document.getElementById('totalOrders').textContent = data.total_orders || 0;
+            document.getElementById('pendingOrders').textContent = data.pending_orders || 0;
+            document.getElementById('totalProducts').textContent = data.total_products || 0;
+            document.getElementById('totalCustomers').textContent = data.total_customers || 0;
+            document.getElementById('cakeOrders').textContent = data.cake_orders || 0;
+            document.getElementById('totalContactMessages').textContent = data.total_contact_messages || 0;
+            document.getElementById('newContactMessages').textContent = data.new_contact_messages || 0;
         }
 
         // Update Charts
         function updateCharts(data) {
-            // Revenue Chart
             updateRevenueChart(data.daily_revenue || {});
-
-            // Status Chart
             updateStatusChart(data.order_status || {});
-
-            // Payment Chart
             updatePaymentChart(data.payment_methods || {});
-
-            // Delivery Chart
             updateDeliveryChart(data.delivery_types || {});
-
-            // Top Products
             updateTopProductsChart(data.top_products || []);
+            updateCategoryChart(data.category_performance || []);
         }
 
         // Revenue Chart
         function updateRevenueChart(dailyRevenue) {
             const ctx = document.getElementById('revenueChart').getContext('2d');
             
-            // Sort by date
-            const sortedDates = Object.keys(dailyRevenue).sort();
+            const sortedDates = Object.keys(dailyRevenue).sort().slice(-30);
             const values = sortedDates.map(date => dailyRevenue[date]);
 
             if (revenueChart) revenueChart.destroy();
@@ -621,9 +655,9 @@
             revenueChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: sortedDates,
+                    labels: sortedDates.map(date => new Date(date).toLocaleDateString()),
                     datasets: [{
-                        label: 'Daily Revenue',
+                        label: 'Daily Revenue (Rs.)',
                         data: values,
                         borderColor: colors.primary,
                         backgroundColor: 'rgba(76, 175, 80, 0.1)',
@@ -767,7 +801,7 @@
             if (topProductsChart) topProductsChart.destroy();
 
             topProductsChart = new Chart(ctx, {
-                type: 'horizontalBar',
+                type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [{
@@ -791,12 +825,50 @@
             });
         }
 
+        // Category Performance Chart
+        function updateCategoryChart(categoryData) {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            
+            const labels = categoryData.map(c => c.category_name);
+            const revenues = categoryData.map(c => c.revenue);
+
+            if (categoryChart) categoryChart.destroy();
+
+            categoryChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Revenue (Rs.)',
+                        data: revenues,
+                        backgroundColor: colors.secondary,
+                        borderColor: colors.secondary,
+                        borderWidth: 1,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'Rs. ' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
         // Update Recent Orders Table
         function updateRecentOrders(orders) {
             const tbody = document.getElementById('ordersTableBody');
             
             if (!orders || orders.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="no-data">No orders found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="no-data">No orders found</td></tr>';
                 return;
             }
 
@@ -812,19 +884,51 @@
                     <td><strong>Rs. ${order.total_amount.toFixed(2)}</strong></td>
                     <td><span class="status-badge status-${order.status}">${order.status_display}</span></td>
                     <td><span class="status-badge payment-${order.payment_status}">${order.payment_status_display}</span></td>
-                    <td>${order.delivery_type === 'delivery' ? '🚚 Delivery' : '🏪 Pickup'}</td>
+                    <td>${order.delivery_type === 'delivery' ? 'Delivery' : 'Pickup'}</td>
                     <td>${new Date(order.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <a href="/admin/orders/order/${order.id}/change/" class="quick-link" style="padding: 4px 8px; font-size: 10px;">View</a>
+                    </td>
                 </tr>
             `).join('');
         }
 
-        // Mock Data (for development)
+        // Update Recent Contact Messages Table
+        function updateRecentContactMessages(contacts) {
+            const tbody = document.getElementById('contactTableBody');
+            
+            if (!contacts || contacts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="no-data">No contact messages found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = contacts.map(contact => `
+                <tr>
+                    <td><strong>${contact.full_name}</strong></td>
+                    <td>${contact.email}</td>
+                    <td>${contact.subject_display}</td>
+                    <td><span class="status-badge status-${contact.status}">${contact.status_display}</span></td>
+                    <td>${new Date(contact.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <a href="/admin/core/contactmessage/${contact.id}/change/" class="quick-link" style="padding: 4px 8px; font-size: 10px;">View</a>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Mock Data (for development/fallback)
         function loadMockData() {
             const mockData = {
                 total_revenue: 125000,
                 total_orders: 45,
                 pending_orders: 8,
                 total_products: 24,
+                total_customers: 156,
+                cake_orders: 23,
+                total_contact_messages: 42,
+                new_contact_messages: 7,
+                unread_contact_messages: 12,
+                replied_contact_messages: 30,
                 daily_revenue: {
                     '2024-01-15': 5000,
                     '2024-01-16': 7200,
@@ -857,8 +961,15 @@
                     { product_name: 'Pastries', quantity_sold: 28, revenue: 8400 },
                     { product_name: 'Cupcakes', quantity_sold: 24, revenue: 4800 },
                 ],
+                category_performance: [
+                    { category_name: 'Cakes', revenue: 45000 },
+                    { category_name: 'Pastries', revenue: 25000 },
+                    { category_name: 'Cookies', revenue: 15000 },
+                    { category_name: 'Breads', revenue: 12000 },
+                ],
                 recent_orders: [
                     {
+                        id: 1,
                         order_number: 'ORD-A1B2C3',
                         user_name: 'John Doe',
                         user_initials: 'JD',
@@ -869,8 +980,10 @@
                         payment_status_display: 'Paid',
                         delivery_type: 'delivery',
                         created_at: new Date().toISOString(),
+                        item_count: 3,
                     },
                     {
+                        id: 2,
                         order_number: 'ORD-D4E5F6',
                         user_name: 'Jane Smith',
                         user_initials: 'JS',
@@ -881,6 +994,33 @@
                         payment_status_display: 'Paid',
                         delivery_type: 'pickup',
                         created_at: new Date().toISOString(),
+                        item_count: 2,
+                    },
+                ],
+                recent_contact_messages: [
+                    {
+                        id: 1,
+                        full_name: 'Alice Johnson',
+                        email: 'alice@example.com',
+                        subject: 'custom',
+                        subject_display: 'Custom Cake Order',
+                        status: 'new',
+                        status_display: 'New',
+                        message: 'I would like to order a custom birthday cake...',
+                        created_at: new Date().toISOString(),
+                        days_since_creation: 0,
+                    },
+                    {
+                        id: 2,
+                        full_name: 'Bob Smith',
+                        email: 'bob@example.com',
+                        subject: 'general',
+                        subject_display: 'General Inquiry',
+                        status: 'read',
+                        status_display: 'Read',
+                        message: 'What are your opening hours?',
+                        created_at: new Date(Date.now() - 86400000).toISOString(),
+                        days_since_creation: 1,
                     },
                 ]
             };
@@ -888,6 +1028,7 @@
             updateStatistics(mockData);
             updateCharts(mockData);
             updateRecentOrders(mockData.recent_orders);
+            updateRecentContactMessages(mockData.recent_contact_messages || []);
         }
 
         // Utility Functions

@@ -154,6 +154,8 @@ class NotificationManager {
     }
 
     displayStoredNotifications() {
+        let hasSessionNotification = false;
+        
         // Check for session notification
         const sessionNotif = document.getElementById('session-notification');
         if (sessionNotif) {
@@ -163,9 +165,7 @@ class NotificationManager {
             if (message && message.trim()) {
                 console.log('Displaying session notification:', type, message);
                 this.show(message, type, 5000);
-                
-                // Clear session notification via AJAX
-                this.clearSessionNotification();
+                hasSessionNotification = true;
             }
         }
 
@@ -183,6 +183,14 @@ class NotificationManager {
                 }
             });
         }
+        
+        // Only clear session notification if there was actually one to display
+        if (hasSessionNotification) {
+            console.log('Clearing session notification via API call');
+            this.clearSessionNotification();
+        } else {
+            console.log('No session notification to clear, skipping API call');
+        }
     }
 
     clearSessionNotification() {
@@ -199,10 +207,17 @@ class NotificationManager {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({})
+            }).then(response => {
+                if (response.ok) {
+                    console.log('Session notification cleared successfully');
+                } else {
+                    console.warn('Failed to clear session notification:', response.status);
+                }
             }).catch(err => {
-                // Silently fail - notification already shown
-                console.log('Session notification cleared');
+                console.warn('Error clearing session notification:', err);
             });
+        } else {
+            console.warn('No CSRF token found, cannot clear session notification');
         }
     }
 }

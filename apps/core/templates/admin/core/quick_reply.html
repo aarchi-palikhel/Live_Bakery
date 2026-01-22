@@ -1,0 +1,283 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <style>
+        .quick-reply-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        
+        .message-details {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .message-details h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        
+        .customer-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .info-item {
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #6c757d;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        
+        .info-value {
+            margin-top: 5px;
+            color: #212529;
+        }
+        
+        .original-message {
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+            margin-top: 15px;
+        }
+        
+        .reply-form {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .form-group textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #80bdff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-new {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-read {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .status-replied {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-closed {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="quick-reply-container">
+    <h1>{{ title }}</h1>
+    
+    <!-- Customer Message Details -->
+    <div class="message-details">
+        <h3>Customer Message Details</h3>
+        
+        <div class="customer-info">
+            <div class="info-item">
+                <div class="info-label">Customer Name</div>
+                <div class="info-value">{{ contact_message.full_name }}</div>
+            </div>
+            
+            <div class="info-item">
+                <div class="info-label">Email</div>
+                <div class="info-value">{{ contact_message.email }}</div>
+            </div>
+            
+            {% if contact_message.phone %}
+            <div class="info-item">
+                <div class="info-label">Phone</div>
+                <div class="info-value">{{ contact_message.phone }}</div>
+            </div>
+            {% endif %}
+            
+            <div class="info-item">
+                <div class="info-label">Subject</div>
+                <div class="info-value">{{ contact_message.get_subject_display }}</div>
+            </div>
+            
+            <div class="info-item">
+                <div class="info-label">Status</div>
+                <div class="info-value">
+                    <span class="status-badge status-{{ contact_message.status }}">
+                        {{ contact_message.get_status_display }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="info-item">
+                <div class="info-label">Received</div>
+                <div class="info-value">{{ contact_message.created_at|date:"M d, Y H:i" }}</div>
+            </div>
+        </div>
+        
+        <div class="original-message">
+            <strong>Original Message:</strong>
+            <p>{{ contact_message.message|linebreaks }}</p>
+        </div>
+    </div>
+    
+    <!-- Previous Replies -->
+    {% if contact_message.replies.exists %}
+    <div class="message-details">
+        <h3>Previous Replies ({{ contact_message.replies.count }})</h3>
+        {% for reply in contact_message.replies.all %}
+        <div class="original-message" style="margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <strong>Reply by {{ reply.admin_user.get_full_name|default:reply.admin_user.username }}</strong>
+                <small style="color: #6c757d;">
+                    {{ reply.created_at|date:"M d, Y H:i" }}
+                    {% if reply.email_sent %}
+                        <span style="color: green;">✓ Email Sent</span>
+                    {% else %}
+                        <span style="color: orange;">⚠ Email Not Sent</span>
+                    {% endif %}
+                </small>
+            </div>
+            <p>{{ reply.reply_message|linebreaks }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- Reply Form -->
+    <div class="reply-form">
+        <h3>Send Reply</h3>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="reply_message">Your Reply:</label>
+                <textarea 
+                    name="reply_message" 
+                    id="reply_message" 
+                    placeholder="Type your reply to {{ contact_message.full_name }} here..."
+                    required
+                ></textarea>
+            </div>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" name="send_email" id="send_email" checked>
+                <label for="send_email">Send reply via email to {{ contact_message.email }}</label>
+            </div>
+            
+            <div class="button-group">
+                <a href="{% url 'admin:core_contactmessage_changelist' %}" class="btn btn-secondary">
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    Send Reply
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

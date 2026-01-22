@@ -238,32 +238,159 @@ class OrderAdmin(ModelAdmin, ImportExportModelAdmin):
     
     def mark_as_confirmed(self, request, queryset):
         """Mark selected orders as confirmed"""
-        updated = queryset.update(status='confirmed')
-        self.message_user(request, f"✅ {updated} order(s) marked as confirmed.")
+        from apps.core.email_utils import send_order_status_update_email
+        
+        updated_count = 0
+        email_sent_count = 0
+        
+        for order in queryset:
+            old_status = order.status
+            if old_status != 'confirmed':
+                order.status = 'confirmed'
+                order.save()
+                updated_count += 1
+                
+                # Send email notification
+                try:
+                    if send_order_status_update_email(order, old_status):
+                        email_sent_count += 1
+                except Exception as e:
+                    self.message_user(request, f"Error sending email for order {order.order_number}: {e}", level='WARNING')
+        
+        if updated_count > 0:
+            message = f"✅ {updated_count} order(s) marked as confirmed."
+            if email_sent_count > 0:
+                message += f" Email notifications sent to {email_sent_count} customer(s)."
+            self.message_user(request, message)
+        else:
+            self.message_user(request, "No orders were updated (they may already be confirmed).")
     mark_as_confirmed.short_description = "📋 Mark as confirmed"
     
     def mark_as_baking(self, request, queryset):
         """Mark selected orders as baking"""
-        updated = queryset.update(status='baking')
-        self.message_user(request, f"✅ {updated} order(s) marked as baking.")
+        from apps.core.email_utils import send_order_status_update_email
+        
+        updated_count = 0
+        email_sent_count = 0
+        
+        for order in queryset:
+            old_status = order.status
+            if old_status != 'baking':
+                order.status = 'baking'
+                order.save()
+                updated_count += 1
+                
+                # Send email notification
+                try:
+                    if send_order_status_update_email(order, old_status):
+                        email_sent_count += 1
+                except Exception as e:
+                    self.message_user(request, f"Error sending email for order {order.order_number}: {e}", level='WARNING')
+        
+        if updated_count > 0:
+            message = f"✅ {updated_count} order(s) marked as baking."
+            if email_sent_count > 0:
+                message += f" Email notifications sent to {email_sent_count} customer(s)."
+            self.message_user(request, message)
+        else:
+            self.message_user(request, "No orders were updated (they may already be baking).")
     mark_as_baking.short_description = "👨‍🍳 Mark as baking"
     
     def mark_as_ready(self, request, queryset):
-        """Mark selected orders as ready for pickup"""
-        updated = queryset.update(status='ready')
-        self.message_user(request, f"✅ {updated} order(s) marked as ready for pickup.")
-    mark_as_ready.short_description = "📦 Mark as ready for pickup"
+        """Mark selected orders as ready for pickup/delivery
+        
+        This action marks orders as ready, which means:
+        - For pickup orders: Customer can come to collect their order
+        - For delivery orders: Order is ready to be dispatched for delivery
+        
+        Customers will receive an email notification with appropriate instructions.
+        """
+        from apps.core.email_utils import send_order_status_update_email
+        
+        updated_count = 0
+        email_sent_count = 0
+        
+        for order in queryset:
+            old_status = order.status
+            if old_status != 'ready':
+                order.status = 'ready'
+                order.save()
+                updated_count += 1
+                
+                # Send email notification
+                try:
+                    if send_order_status_update_email(order, old_status):
+                        email_sent_count += 1
+                except Exception as e:
+                    self.message_user(request, f"Error sending email for order {order.order_number}: {e}", level='WARNING')
+        
+        if updated_count > 0:
+            message = f"✅ {updated_count} order(s) marked as ready for pickup/delivery."
+            if email_sent_count > 0:
+                message += f" Email notifications sent to {email_sent_count} customer(s)."
+            self.message_user(request, message)
+        else:
+            self.message_user(request, "No orders were updated (they may already be ready).")
+    mark_as_ready.short_description = "📦 Mark as ready (pickup/delivery)"
     
     def mark_as_completed(self, request, queryset):
         """Mark selected orders as completed"""
-        updated = queryset.update(status='completed')
-        self.message_user(request, f"✅ {updated} order(s) marked as completed.")
+        from apps.core.email_utils import send_order_status_update_email
+        
+        updated_count = 0
+        email_sent_count = 0
+        
+        for order in queryset:
+            old_status = order.status
+            if old_status != 'completed':
+                order.status = 'completed'
+                order.save()
+                updated_count += 1
+                
+                # Send email notification
+                try:
+                    if send_order_status_update_email(order, old_status):
+                        email_sent_count += 1
+                except Exception as e:
+                    self.message_user(request, f"Error sending email for order {order.order_number}: {e}", level='WARNING')
+        
+        if updated_count > 0:
+            message = f"✅ {updated_count} order(s) marked as completed."
+            if email_sent_count > 0:
+                message += f" Email notifications sent to {email_sent_count} customer(s)."
+            self.message_user(request, message)
+        else:
+            self.message_user(request, "No orders were updated (they may already be completed).")
     mark_as_completed.short_description = "🏁 Mark as completed"
     
     def mark_as_cancelled(self, request, queryset):
         """Mark selected orders as cancelled"""
-        updated = queryset.update(status='cancelled')
-        self.message_user(request, f"❌ {updated} order(s) marked as cancelled.")
+        from apps.core.email_utils import send_order_status_update_email
+        
+        updated_count = 0
+        email_sent_count = 0
+        
+        for order in queryset:
+            old_status = order.status
+            if old_status != 'cancelled':
+                order.status = 'cancelled'
+                order.save()
+                updated_count += 1
+                
+                # Send email notification
+                try:
+                    if send_order_status_update_email(order, old_status):
+                        email_sent_count += 1
+                except Exception as e:
+                    self.message_user(request, f"Error sending email for order {order.order_number}: {e}", level='WARNING')
+        
+        if updated_count > 0:
+            message = f"❌ {updated_count} order(s) marked as cancelled."
+            if email_sent_count > 0:
+                message += f" Email notifications sent to {email_sent_count} customer(s)."
+            self.message_user(request, message)
+        else:
+            self.message_user(request, "No orders were updated (they may already be cancelled).")
     mark_as_cancelled.short_description = "❌ Mark as cancelled"
     
 @admin.register(OrderItem)
