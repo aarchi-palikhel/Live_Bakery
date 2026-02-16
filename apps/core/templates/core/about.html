@@ -5,11 +5,11 @@
 
 {% block content %}
 <!-- Hero Section -->
-<section class="bg-linear-to-br from-amber-50 to-orange-50 py-12 sm:py-16 md:py-20">
+<section class="bg-amber-50 py-10 sm:py-12">
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center">
-            <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 mb-4 sm:mb-6">About Live Bakery</h1>
-            <p class="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">About Live Bakery</h1>
+            <p class="text-base sm:text-lg text-gray-700 max-w-3xl mx-auto">
                 Serving Kamalbinayak, Bhaktapur with quality baked goods since 2025
             </p>
         </div>
@@ -17,27 +17,27 @@
 </section>
 
 <!-- Our Story -->
-<section class="py-12 sm:py-16 md:py-20 bg-white">
+<section class="py-12 bg-white">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             <!-- Text Content -->
             <div class="order-2 lg:order-1">
-                <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-4 sm:mb-6">Our Story</h2>
-                <p class="text-base sm:text-lg text-gray-600 mb-4 sm:mb-6 leading-relaxed">
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Our Story</h2>
+                <p class="text-base text-gray-600 mb-4 leading-relaxed">
                     Established in the heart of Kamalbinayak, Live Bakery was born from a passion
                     for creating exceptional baked goods that bring people together. Our founder
                     envisioned a neighborhood bakery that would serve as a gathering place for
                     the community, providing fresh, quality products for daily enjoyment and
                     special celebrations.
                 </p>
-                <p class="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8 leading-relaxed">
+                <p class="text-base text-gray-600 mb-6 leading-relaxed">
                     Located in Kamalbinayak, Bhaktapur, we take pride in being part of this
                     vibrant community. Our bakery has become a trusted source for families,
                     students, and professionals seeking quality baked goods made with care
                     and attention to detail.
                 </p>
-                <div class="bg-linear-to-r from-amber-50 to-orange-50 p-4 sm:p-6 rounded-lg border-l-4 border-amber-500 shadow-sm">
-                    <p class="text-amber-800 font-semibold text-sm sm:text-base italic">
+                <div class="bg-amber-50 p-4 sm:p-6 rounded-lg border-l-4 border-amber-600">
+                    <p class="text-amber-900 font-semibold text-sm sm:text-base italic">
                         "Our mission is simple: to provide the local community with
                         fresh, delicious bakery products that make every day special and
                         every celebration memorable."
@@ -47,7 +47,7 @@
 
             <!-- Image -->
             <div class="order-1 lg:order-2">
-                <div class="bg-linear-to-br from-amber-100 to-orange-100 rounded-lg overflow-hidden shadow-lg h-64 sm:h-80 md:h-96 flex items-center justify-center">
+                <div class="bg-amber-50 rounded-lg overflow-hidden shadow h-64 sm:h-80 flex items-center justify-center border border-gray-200">
                     <img 
                         src="{% static 'images/logo.png' %}" 
                         alt="Live Bakery - Fresh Bakes"
@@ -60,57 +60,42 @@
 </section>
 
 <!-- Our Values -->
-<section class="py-12 sm:py-16 md:py-20 bg-gray-50">
+<section class="py-12 bg-gray-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-8 sm:mb-12">
-            <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-3 sm:mb-4">Our Values</h2>
-            <p class="text-base sm:text-lg text-gray-600">The principles that guide everything we do</p>
+        <div class="text-center mb-8">
+            <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Our Values</h2>
+            <p class="text-base text-gray-600">The principles that guide everything we do</p>
         </div>
        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
             <!-- Quality Assurance -->
-            <div class="bg-white p-6 sm:p-8 rounded-lg shadow-lg hover:shadow-xl transition duration-300 border border-gray-100">
-                <div class="w-16 h-16 bg-linear-to-br from-amber-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition border border-gray-200">
+                <div class="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                     </svg>
                 </div>
-                <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 text-center">Quality Assurance</h3>
-                <p class="text-sm sm:text-base text-gray-600 text-center leading-relaxed">
+                <h3 class="text-lg font-bold text-gray-900 mb-2 text-center">Quality Assurance</h3>
+                <p class="text-sm text-gray-600 text-center leading-relaxed">
                     We use only the finest ingredients and maintain strict quality standards
                     in every product we bake, ensuring consistency and excellence.
                 </p>
             </div>
            
             <!-- Freshness First -->
-            <div class="bg-white p-6 sm:p-8 rounded-lg shadow-lg hover:shadow-xl transition duration-300 border border-gray-100">
-                <div class="w-16 h-16 bg-linear-to-br from-amber-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition border border-gray-200">
+                <div class="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                     </svg>
                 </div>
-                <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 text-center">Freshness First</h3>
-                <p class="text-sm sm:text-base text-gray-600 text-center leading-relaxed">
+                <h3 class="text-lg font-bold text-gray-900 mb-2 text-center">Freshness First</h3>
+                <p class="text-sm text-gray-600 text-center leading-relaxed">
                     Every item is baked fresh daily. We never use day-old products,
                     guaranteeing the best taste and texture for our customers.
-                </p>
-            </div>
-           
-            <!-- Community Focus -->
-            <div class="bg-white p-6 sm:p-8 rounded-lg shadow-lg hover:shadow-xl transition duration-300 border border-gray-100">
-                <div class="w-16 h-16 bg-linear-to-br from-amber-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                    </svg>
-                </div>
-                <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 text-center">Community Focus</h3>
-                <p class="text-sm sm:text-base text-gray-600 text-center leading-relaxed">
-                    We're deeply committed to the Kamalbinayak community, supporting local
-                    events and building relationships with our neighbors and customers.
                 </p>
             </div>
         </div>
     </div>
 </section>
 {% endblock %}
-

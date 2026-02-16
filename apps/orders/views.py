@@ -81,6 +81,8 @@ def create_order_with_payment(request):
                         quantity=cart_item.quantity,
                         price=cart_item.product.base_price,
                     )
+                    # Reduce stock quantity
+                    cart_item.product.reduce_stock(cart_item.quantity)
                 
                 # Handle payment based on method
                 if payment_method == 'esewa':
@@ -373,6 +375,9 @@ def order_create(request):
                                     special_instructions=customization.special_instructions,
                                 )
                                 
+                                # Reduce stock quantity
+                                cart_item.product.reduce_stock(cart_item.quantity)
+                                
                                 # Save design reference if image exists
                                 if customization.reference_image:
                                     try:
@@ -391,12 +396,15 @@ def order_create(request):
                                 # Handle regular items
                                 final_price = float(cart_item.product.base_price)
                                 
-                                OrderItem.objects.create(
+                                order_item = OrderItem.objects.create(
                                     order=order,
                                     product=cart_item.product,
                                     quantity=cart_item.quantity,
                                     price=final_price,
                                 )
+                                
+                                # Reduce stock quantity
+                                cart_item.product.reduce_stock(cart_item.quantity)
                         
                         # Clear the cart
                         cart.items.all().delete()

@@ -80,6 +80,36 @@ def send_template_email(
         return False
 
 
+def send_contact_confirmation_email(contact_message):
+    """
+    Send an automated confirmation email when a contact message is received
+    
+    Args:
+        contact_message: ContactMessage instance
+    
+    Returns:
+        bool: True if email was sent successfully, False otherwise
+    """
+    context = {
+        'customer_name': contact_message.full_name,
+        'original_message': contact_message.message,
+        'contact_subject': contact_message.get_subject_display(),
+        'submission_time': contact_message.created_at.strftime('%B %d, %Y at %I:%M %p'),
+        'bakery_name': 'Live Bakery',
+        'bakery_location': 'Kamalbinayak, Bhaktapur',
+    }
+    
+    subject = f"Message Received - {contact_message.get_subject_display()} - Live Bakery"
+    
+    return send_template_email(
+        to_email=contact_message.email,
+        subject=subject,
+        template_name='emails/contact_confirmation',
+        context=context,
+        fail_silently=True  # Don't break contact form if email fails
+    )
+
+
 def send_contact_reply_email(contact_message, reply_message, admin_user):
     """
     Send a reply email for a contact message

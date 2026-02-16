@@ -23,32 +23,32 @@
         </ol>
     </nav>
 
-    <div class="w-full bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+    <div class="w-full bg-white rounded-lg shadow border border-gray-200">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-0">
             <!-- LEFT HALF: Product Image -->
-            <div class="w-full p-4 sm:p-8 flex items-center justify-center bg-gray-50">
+            <div class="w-full p-8 flex items-center justify-center bg-gray-50">
                 <div class="w-full max-w-sm">
                     <div class="rounded-lg overflow-hidden bg-white flex items-center justify-center">
                         {% if product.image %}
                             <img id="main-image" 
                                  src="{{ product.image.url }}" 
                                  alt="{{ product.name }}" 
-                                 class="w-full h-auto max-h-[250px] sm:max-h-[350px] lg:max-h-[400px] object-contain p-4 sm:p-6">
+                                 class="w-full h-auto max-h-[400px] object-contain p-6">
                         {% else %}
-                            <div class="w-full h-64 sm:h-80 flex items-center justify-center bg-linear-to-br from-amber-50 to-orange-50">
+                            <div class="w-full h-80 flex items-center justify-center bg-amber-50">
                                 <div class="text-center px-4">
-                                    <div class="w-20 h-20 sm:w-24 sm:h-24 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <div class="w-24 h-24 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                         {% if product.is_cake %}
-                                        <svg class="w-10 h-10 sm:w-12 sm:h-12 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="w-12 h-12 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0v-3a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0v3a2.704 2.704 0 01-1.5-.454z"/>
                                         </svg>
                                         {% else %}
-                                        <svg class="w-10 h-10 sm:w-12 sm:h-12 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="w-12 h-12 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/>
                                         </svg>
                                         {% endif %}
                                     </div>
-                                    <p class="text-amber-600 font-medium text-sm sm:text-lg">{{ product.name }}</p>
+                                    <p class="text-amber-600 font-medium text-lg">{{ product.name }}</p>
                                 </div>
                             </div>
                         {% endif %}
@@ -57,35 +57,48 @@
             </div>
 
             <!-- RIGHT HALF: Product Description -->
-            <div class="w-full p-4 sm:p-8 border-t lg:border-t-0 lg:border-l border-gray-200 flex flex-col">
+            <div class="w-full p-8 border-t lg:border-t-0 lg:border-l border-gray-200 flex flex-col">
                 <!-- Product Header -->
                 <div class="mb-6">
-                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">{{ product.name }}</h1>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ product.name }}</h1>
                     
-                    <div class="flex flex-col sm:flex-row sm:items-center mb-4 gap-2 sm:gap-3">
-                        <span class="text-amber-600 font-medium text-sm sm:text-base">{{ product.category.name|default:"Bakery Item" }}</span>
+                    <div class="flex flex-col sm:flex-row sm:items-center mb-4 gap-2">
+                        <span class="text-amber-700 font-medium">{{ product.category.name|default:"Bakery Item" }}</span>
                         <span class="text-gray-400 mx-3 hidden sm:inline">•</span>
-                        <span class="text-xl sm:text-2xl font-bold text-amber-600">Rs. {{ product.base_price }}</span>
+                        <span class="text-2xl font-bold text-amber-700">Rs. {{ product.base_price }}</span>
                     </div>
                     
                     <!-- Product Status Badges -->
                     <div class="flex flex-wrap gap-2 mb-6">
                         {% if product.is_featured %}
-                        <span class="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded">
+                        <span class="bg-amber-600 text-white text-xs font-semibold px-3 py-1 rounded">
                             Featured
                         </span>
                         {% endif %}
                         
                         {% if product.is_cake %}
-                        <span class="bg-[#c98276] text-white text-xs font-bold px-3 py-1 rounded">
+                        <span class="bg-purple-600 text-white text-xs font-semibold px-3 py-1 rounded">
                             🎂 Custom Cake
                         </span>
                         {% endif %}
                         
-                        {% if not product.in_stock %}
-                        <span class="bg-red-500 text-white text-sm font-bold px-3 py-1 rounded">
-                            Out of Stock
-                        </span>
+                        <!-- Stock Status -->
+                        {% if product.stock_quantity == 0 %}
+                            <span class="bg-green-50 text-green-700 px-3 py-1 rounded text-xs font-medium border border-green-200">
+                                Made to Order
+                            </span>
+                        {% elif product.stock_quantity <= 5 %}
+                            <span class="bg-orange-50 text-orange-700 px-3 py-1 rounded text-xs font-medium border border-orange-200">
+                                Only {{ product.stock_quantity }} left
+                            </span>
+                        {% elif not product.in_stock %}
+                            <span class="bg-red-600 text-white text-xs font-semibold px-3 py-1 rounded">
+                                Out of Stock
+                            </span>
+                        {% else %}
+                            <span class="bg-blue-50 text-blue-700 px-3 py-1 rounded text-xs font-medium border border-blue-200">
+                                {{ product.stock_quantity }} in stock
+                            </span>
                         {% endif %}
                     </div>
                 </div>

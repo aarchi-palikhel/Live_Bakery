@@ -58,6 +58,16 @@ def contact(request):
                 contact_message.user_agent = request.META.get('HTTP_USER_AGENT', '')
                 contact_message.save()
                 
+                # Send automated confirmation email
+                from core.email_utils import send_contact_confirmation_email
+                try:
+                    send_contact_confirmation_email(contact_message)
+                except Exception as email_error:
+                    # Log email error but don't fail the contact form submission
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Failed to send confirmation email: {email_error}")
+                
                 # Return success response
                 return render(request, 'core/contact.html', {
                     'form': ContactForm(),  # Fresh form

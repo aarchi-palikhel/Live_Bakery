@@ -1,22 +1,22 @@
 {% load static %}
 
-<div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition duration-300 border border-gray-100">
+<div class="bg-white rounded-lg shadow hover:shadow-lg transition border border-gray-200">
     <!-- Product Image -->
-    <div class="relative h-48 sm:h-56 overflow-hidden bg-gray-100">
+    <div class="relative h-56 overflow-hidden bg-gray-50 rounded-t-lg">
         {% if product.image %}
             <a href="{% url 'products:product_detail' product.id %}">
-                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-full h-full object-cover transform hover:scale-110 transition duration-300">
+                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-full h-full object-cover">
             </a>
         {% else %}
             <a href="{% url 'products:product_detail' product.id %}">
-                <div class="w-full h-full bg-linear-to-br from-amber-50 to-orange-50 flex items-center justify-center">
+                <div class="w-full h-full bg-amber-50 flex items-center justify-center">
                     <div class="text-center">
-                        <div class="w-16 h-16 bg-linear-to-br from-amber-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-2">
                             <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0v-3a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0v3a2.704 2.704 0 01-1.5-.454z"/>
                             </svg>
                         </div>
-                        <p class="text-xs sm:text-sm text-amber-600 font-medium">{{ product.category.name|default:"Bakery" }}</p>
+                        <p class="text-sm text-amber-600 font-medium">{{ product.category.name|default:"Bakery" }}</p>
                     </div>
                 </div>
             </a>
@@ -24,53 +24,54 @@
         
         <!-- Featured Badge -->
         {% if product.is_featured %}
-        <div class="absolute top-3 right-3 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">Featured</div>
+        <div class="absolute top-3 right-3 bg-red-600 text-white px-3 py-1 rounded-full text-xs font-semibold">Featured</div>
         {% endif %}
         
         <!-- Stock Status Badge -->
         {% if not product.in_stock %}
         <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <span class="bg-red-600 text-white px-4 py-2 rounded-lg font-bold">Out of Stock</span>
+            <span class="bg-red-600 text-white px-4 py-2 rounded font-semibold">Out of Stock</span>
         </div>
         {% endif %}
     </div>
     
     <!-- Product Info -->
-    <div class="p-4 sm:p-6">
+    <div class="p-5">
         <a href="{% url 'products:product_detail' product.id %}">
-            <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2 hover:text-amber-600 transition duration-200 line-clamp-2">{{ product.name }}</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2 hover:text-amber-700 line-clamp-2">{{ product.name }}</h3>
         </a>
         
         <!-- Description -->
-        <p class="text-gray-600 mb-4 text-xs sm:text-sm line-clamp-2">{{ product.short_description|default:product.description|truncatechars:60 }}</p>
+        <p class="text-gray-600 mb-3 text-sm line-clamp-2">{{ product.short_description|default:product.description|truncatechars:60 }}</p>
+        
+        <!-- Stock Status -->
+        <div class="mb-3">
+            {% if product.stock_quantity == 0 %}
+                <span class="inline-block bg-green-50 text-green-700 px-3 py-1 rounded text-xs font-medium border border-green-200">
+                    Made to Order
+                </span>
+            {% elif product.stock_quantity <= 5 %}
+                <span class="inline-block bg-orange-50 text-orange-700 px-3 py-1 rounded text-xs font-medium border border-orange-200">
+                    Only {{ product.stock_quantity }} left
+                </span>
+            {% else %}
+                <span class="inline-block bg-blue-50 text-blue-700 px-3 py-1 rounded text-xs font-medium border border-blue-200">
+                    {{ product.stock_quantity }} in stock
+                </span>
+            {% endif %}
+        </div>
         
         <!-- Category Badge -->
         <div class="mb-3">
-            <span class="inline-block bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-semibold">
+            <span class="inline-block bg-amber-50 text-amber-700 px-3 py-1 rounded text-xs font-medium border border-amber-200">
                 {{ product.category.name }}
             </span>
         </div>
         
-        <!-- Rating (if available) -->
-        {% if product.rating %}
-        <div class="flex items-center mb-3">
-            <div class="flex text-yellow-400">
-                {% for i in "12345" %}
-                    {% if i <= product.rating %}
-                        <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
-                    {% else %}
-                        <svg class="w-4 h-4 fill-gray-300" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
-                    {% endif %}
-                {% endfor %}
-            </div>
-            <span class="text-xs text-gray-600 ml-2">({{ product.review_count|default:0 }} reviews)</span>
-        </div>
-        {% endif %}
-        
         <!-- Price and Action -->
         <div class="flex justify-between items-center border-t border-gray-100 pt-4">
             <div>
-                <span class="text-xl sm:text-2xl font-bold text-amber-600">Rs. {{ product.base_price }}</span>
+                <span class="text-2xl font-bold text-amber-700">Rs. {{ product.base_price }}</span>
                 {% if product.is_cake %}
                 <p class="text-xs text-gray-500 mt-1">{{ product.get_cake_weight_display }}</p>
                 {% endif %}
@@ -82,20 +83,17 @@
                         {% csrf_token %}
                         <input type="hidden" name="quantity" value="1">
                         <input type="hidden" name="override" value="false">
-                        <button type="submit" class="bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-3 sm:px-4 py-2 rounded-lg transition duration-200 text-xs sm:text-sm font-semibold add-to-cart-btn shadow-md hover:shadow-lg" data-product-id="{{ product.id }}" title="Add to Cart">
-                            <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                            </svg>
+                        <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded transition text-sm font-medium add-to-cart-btn" data-product-id="{{ product.id }}" title="Add to Cart">
                             Add
                         </button>
                     </form>
                 {% else %}
-                    <a href="{% url 'users:login' %}" class="bg-gray-400 hover:bg-gray-500 text-white px-3 sm:px-4 py-2 rounded-lg transition duration-200 text-xs sm:text-sm font-semibold">
+                    <a href="{% url 'users:login' %}" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded transition text-sm font-medium">
                         Login
                     </a>
                 {% endif %}
             {% else %}
-                <button disabled class="bg-gray-300 text-gray-600 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold cursor-not-allowed">
+                <button disabled class="bg-gray-300 text-gray-600 px-4 py-2 rounded text-sm font-medium cursor-not-allowed">
                     Unavailable
                 </button>
             {% endif %}

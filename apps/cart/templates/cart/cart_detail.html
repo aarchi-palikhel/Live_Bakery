@@ -54,7 +54,7 @@
 
     .quantity-btn:hover:not(:disabled) {
         background-color: #f3f4f6;
-        color: #8f3232;
+        color: #d97706;
     }
 
     .quantity-btn:active:not(:disabled) {
@@ -151,7 +151,7 @@
 <div class="max-w-6xl mx-auto my-8 px-4">
     <!-- Page Header -->
     <div class="mb-8">
-        <h1 class="text-3xl font-bold text-[#8f3232] mb-2">Shopping Cart</h1>
+        <h1 class="text-3xl font-bold text-amber-700 mb-2">Shopping Cart</h1>
         <p class="text-gray-600">Review your delicious selections</p>
     </div>
 
@@ -178,7 +178,7 @@
                         <div class="cart-item-details text-center md:text-left">
                             <h3 class="font-semibold text-gray-800 mb-1">
                                 <a href="{% url 'products:product_detail' item.product.id %}" 
-                                   class="hover:text-[#8f3232] transition">
+                                   class="hover:text-amber-700 transition">
                                     {{ item.product.name }}
                                 </a>
                             </h3>
@@ -244,7 +244,7 @@
                     <div class="md:hidden mt-4 pt-4 border-t border-gray-100">
                         <div class="flex justify-between items-center">
                             <span class="text-gray-600">Subtotal:</span>
-                            <div class="text-lg font-bold text-[#8f3232] item-total-price">Rs. {{ item.total_price }}</div>
+                            <div class="text-lg font-bold text-amber-700 item-total-price">Rs. {{ item.total_price }}</div>
                         </div>
                     </div>
                 </div>
@@ -275,7 +275,7 @@
                     <div class="border-t border-gray-200 pt-3">
                         <div class="flex justify-between">
                             <span class="text-lg font-bold text-gray-800">Subtotal:</span>
-                            <span class="text-lg font-bold text-[#8f3232]" data-total-price="{{ cart.total_price }}">Rs. {{ cart.total_price }}</span>
+                            <span class="text-lg font-bold text-amber-700" data-total-price="{{ cart.total_price }}">Rs. {{ cart.total_price }}</span>
                         </div>
                     </div>
                 </div>
@@ -314,7 +314,7 @@
                     {% endfor %}
                     
                     <a href="{% url 'orders:order_create' %}"
-                       class="block w-full {% if has_issues %}bg-gray-300 cursor-not-allowed{% else %}bg-[#8f3232] hover:bg-[#7a2a2a]{% endif %} text-white px-4 py-3 rounded-lg font-medium text-center transition"
+                       class="block w-full {% if has_issues %}bg-gray-300 cursor-not-allowed{% else %}bg-amber-600 hover:bg-amber-700{% endif %} text-white px-4 py-3 rounded-lg font-medium text-center transition"
                        {% if has_issues %}onclick="return false;"{% endif %}>
                         Proceed to Checkout
                     </a>
@@ -339,7 +339,7 @@
         <h3 class="text-xl font-semibold text-gray-700 mb-2">Your cart is empty</h3>
         <p class="text-gray-600 mb-6">Add some delicious bakery items to get started!</p>
         <a href="{% url 'products:product_list' %}"
-            class="bg-[#8f3232] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#7a2a2a] inline-block transition">
+            class="bg-amber-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-amber-700 inline-block transition">
             Start Shopping
         </a>
     </div>

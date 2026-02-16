@@ -8,22 +8,22 @@
 <div id="ajax-notifications" class="fixed top-20 right-4 z-50 space-y-2 max-w-xs sm:max-w-sm"></div>
 
 <!-- Hero Section -->
-<section class="bg-linear-to-br bg-white py-10 sm:py-10 md:py-10">
+<section class="bg-amber-50 py-8 sm:py-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center">
-            <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 mb-3 sm:mb-4 leading-tight">
+            <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3">
                 Fresh Bakery Products<br>
-                <span class="text-amber-600">For Every Celebration</span>
+                <span class="text-amber-700">For Every Celebration</span>
             </h1>
-            <p class="text-base sm:text-lg md:text-xl text-gray-600 mb-6 sm:mb-8 max-w-3xl mx-auto leading-relaxed">
+            <p class="text-base text-gray-700 mb-6 max-w-2xl mx-auto">
                 Located in Kamalbinayak, Bhaktapur - serving quality baked goods for birthdays,
-                anniversaries, and daily enjoyment. Freshly baked with premium ingredients.
+                anniversaries, and daily enjoyment.
             </p>
-            <div class="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center">
-                <a href="{% url 'products:product_list' %}" class="bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold py-3 px-6 sm:px-8 rounded-lg text-base sm:text-lg transition duration-200 shadow-lg hover:shadow-xl">
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                <a href="{% url 'products:product_list' %}" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2 px-6 rounded transition">
                     Order Now
                 </a>
-                <a href="{% url 'core:about' %}" class="border-2 border-amber-500 text-amber-600 hover:bg-amber-50 font-bold py-3 px-6 sm:px-8 rounded-lg text-base sm:text-lg transition duration-200">
+                <a href="{% url 'core:about' %}" class="border-2 border-amber-600 text-amber-700 hover:bg-amber-50 font-semibold py-2 px-6 rounded transition">
                     Learn More
                 </a>
             </div>
@@ -32,78 +32,84 @@
 </section>
 
 <!-- Featured Products Section-->
-<section class="py-12 sm:py-16 md:py-20 bg-linear-to-br from-amber-50 via-orange-50 to-yellow-50 relative overflow-hidden">
-    <!-- Background decoration -->
-    <div class="absolute top-0 left-0 w-30 h-30 bg-amber-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 -translate-x-1/2 -translate-y-1/2"></div>
-    <div class="absolute bottom-0 right-0 w-30 h-30 bg-orange-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 translate-x-1/2 translate-y-1/2"></div>
-
-    <div class="max-w-7xl mx-auto px-2 sm:px-2 lg:px-4 relative z-10">
-        <div class="text-center mb-8 sm:mb-12">
-            <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2 sm:mb-3">Featured Products</h2>
-            <p class="text-base sm:text-lg text-gray-600">Our special selections curated just for you</p>
+<section class="py-16 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-bold text-gray-900 mb-3">Featured Products</h2>
+            <p class="text-lg text-gray-600">Our special selections</p>
         </div>
        
         {% if featured_products %}
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {% for product in featured_products %}
-            <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition duration-300 border border-gray-100">
+            <div class="bg-white rounded-lg shadow hover:shadow-lg transition border border-gray-200">
                 <!-- Product Image -->
-                <div class="relative h-48 sm:h-56 overflow-hidden bg-gray-100">
+                <div class="relative h-56 overflow-hidden bg-gray-50 rounded-t-lg">
                     {% if product.image %}
                         <a href="{% url 'products:product_detail' product.id %}">
-                            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-full h-full object-cover transform hover:scale-110 transition duration-300">
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-full h-full object-cover">
                         </a>
                     {% else %}
                         <a href="{% url 'products:product_detail' product.id %}">
-                            <div class="w-full h-full bg-linear-to-br from-amber-50 to-orange-50 flex items-center justify-center">
+                            <div class="w-full h-full bg-amber-50 flex items-center justify-center">
                                 <div class="text-center">
-                                    <div class="w-16 h-16 bg-linear-to-br from-amber-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-2">
                                         <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0v-3a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0v3a2.704 2.704 0 01-1.5-.454z"/>
                                         </svg>
                                     </div>
-                                    <p class="text-xs sm:text-sm text-amber-600 font-medium">{{ product.category.name|default:"Bakery" }}</p>
+                                    <p class="text-sm text-amber-600 font-medium">{{ product.category.name|default:"Bakery" }}</p>
                                 </div>
                             </div>
                         </a>
                     {% endif %}
-                    <div class="absolute top-3 right-3 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">Featured</div>
+                    <div class="absolute top-3 right-3 bg-red-600 text-white px-3 py-1 rounded-full text-xs font-semibold">Featured</div>
                 </div>
                 
                 <!-- Product Info -->
-                <div class="p-4 sm:p-6">
+                <div class="p-5">
                     <a href="{% url 'products:product_detail' product.id %}">
-                        <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2 hover:text-amber-600 transition duration-200 line-clamp-2">{{ product.name }}</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2 hover:text-amber-700 line-clamp-2">{{ product.name }}</h3>
                     </a>
-                    <p class="text-gray-600 mb-4 text-xs sm:text-sm line-clamp-2">{{ product.short_description|default:product.description|truncatechars:60 }}</p>
+                    <p class="text-gray-600 mb-3 text-sm line-clamp-2">{{ product.short_description|default:product.description|truncatechars:60 }}</p>
+                    
+                    <!-- Stock Status -->
+                    <div class="mb-3">
+                        {% if product.stock_quantity == 0 %}
+                            <span class="inline-block bg-green-50 text-green-700 px-2 py-1 rounded text-xs font-medium border border-green-200">
+                                Made to Order
+                            </span>
+                        {% elif product.stock_quantity <= 5 %}
+                            <span class="inline-block bg-orange-50 text-orange-700 px-2 py-1 rounded text-xs font-medium border border-orange-200">
+                                Only {{ product.stock_quantity }} left
+                            </span>
+                        {% else %}
+                            <span class="inline-block bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs font-medium border border-blue-200">
+                                {{ product.stock_quantity }} in stock
+                            </span>
+                        {% endif %}
+                    </div>
+                    
                     <div class="flex justify-between items-center">
-                        <span class="text-xl sm:text-2xl font-bold text-amber-600">Rs. {{ product.base_price }}</span>
+                        <span class="text-2xl font-bold text-amber-700">Rs. {{ product.base_price }}</span>
                         {% if user.is_authenticated %}
                             {% if product.is_cake %}
-                                <!-- Customize Cake Button for Cake Products -->
                                 <a href="{% url 'orders:customize_cake' product.id %}" 
-                                   class="bg-linear-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-3 sm:px-4 py-2 rounded-lg transition duration-200 text-xs sm:text-sm font-semibold add-to-cart-btn-home shadow-md hover:shadow-lg">
-                                    <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                    </svg>
+                                   class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm font-medium transition">
                                     Customize
                                 </a>
                             {% else %}
-                                <!-- Add to Cart Button for Non-Cake Products -->
                                 <form method="post" action="{% url 'cart:cart_add' product.id %}" class="add-to-cart-form-home" data-product-id="{{ product.id }}">
                                     {% csrf_token %}
                                     <input type="hidden" name="quantity" value="1">
                                     <input type="hidden" name="override" value="false">
-                                    <button type="submit" class="bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-3 sm:px-4 py-2 rounded-lg transition duration-200 text-xs sm:text-sm font-semibold add-to-cart-btn-home shadow-md hover:shadow-lg" data-product-id="{{ product.id }}">
-                                        <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                                        </svg>
+                                    <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition" data-product-id="{{ product.id }}">
                                         Add to Cart
                                     </button>
                                 </form>
                             {% endif %}
                         {% else %}
-                            <a href="{% url 'users:login' %}" class="bg-gray-400 hover:bg-gray-500 text-white px-3 sm:px-4 py-2 rounded-lg transition duration-200 text-xs sm:text-sm font-semibold">
+                            <a href="{% url 'users:login' %}" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded text-sm font-medium transition">
                                 Login
                             </a>
                         {% endif %}
@@ -114,23 +120,23 @@
         </div>
 
         {% if featured_products.count > 4 %}
-        <div class="text-center mt-10 sm:mt-12">
-            <a href="{% url 'products:product_list' %}" class="inline-block border-2 border-amber-500 text-amber-600 hover:bg-amber-50 font-bold py-3 px-6 sm:px-8 rounded-lg text-base sm:text-lg transition duration-200">
+        <div class="text-center mt-12">
+            <a href="{% url 'products:product_list' %}" class="inline-block border-2 border-amber-600 text-amber-700 hover:bg-amber-50 font-semibold py-3 px-8 rounded transition">
                 View All Products
             </a>
         </div>
         {% endif %}
 
         {% else %}
-        <div class="text-center py-12 sm:py-16">
+        <div class="text-center py-16">
             <div class="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg class="w-10 h-10 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
             </div>
-            <h3 class="text-xl sm:text-2xl font-bold text-gray-700 mb-2">No Featured Products Available</h3>
-            <p class="text-gray-600 mb-4 sm:mb-6">Check back soon for our featured selections!</p>
-            <a href="{% url 'products:product_list' %}" class="inline-block bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold py-3 px-6 sm:px-8 rounded-lg text-base sm:text-lg transition duration-200 shadow-lg hover:shadow-xl">
+            <h3 class="text-2xl font-bold text-gray-700 mb-2">No Featured Products Available</h3>
+            <p class="text-gray-600 mb-6">Check back soon for our featured selections!</p>
+            <a href="{% url 'products:product_list' %}" class="inline-block bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 px-8 rounded transition">
                 Browse All Products
             </a>
         </div>
@@ -138,45 +144,30 @@
     </div>
 </section>
 
-<section class="py-10 sm:py-10 md:py-10 bg-white">
+<section class="py-10 bg-gray-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-8 sm:mb-12">
-            <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2 sm:mb-3">Why Choose Live Bakery?</h2>
-            <p class="text-base sm:text-lg text-gray-600">Quality and freshness you can trust</p>
+        <div class="text-center mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-2">Why Choose Live Bakery?</h2>
+            <p class="text-base text-gray-600">Quality and freshness you can trust</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <!-- Feature 1 -->
-            <div class="text-center p-6 sm:p-8 bg-linear-to-br from-amber-50 to-orange-50 rounded-lg shadow-md hover:shadow-lg transition duration-300 border border-amber-100">
-                <div class="w-14 h-14 bg-linear-to-br from-amber-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0v-3a2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0 2.704 2.704 0 003 0 2.704 2.704 0 013 0v3a2.704 2.704 0 01-1.5-.454z"/>
-                    </svg>
-                </div>
-                <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2">Fresh Daily</h3>
-                <p class="text-sm sm:text-base text-gray-600 leading-relaxed">Baked fresh every morning with no preservatives or artificial ingredients</p>
+            <div class="text-center p-6 bg-white rounded-lg shadow border border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Fresh Daily</h3>
+                <p class="text-gray-600 text-sm">Baked fresh every morning with no preservatives or artificial ingredients</p>
             </div>
            
             <!-- Feature 2 -->
-            <div class="text-center p-6 sm:p-8 bg-linear-to-br from-amber-50 to-orange-50 rounded-lg shadow-md hover:shadow-lg transition duration-300 border border-amber-100">
-                <div class="w-14 h-14 bg-linear-to-br from-amber-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                    </svg>
-                </div>
-                <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2">Local Community</h3>
-                <p class="text-sm sm:text-base text-gray-600 leading-relaxed">Proudly serving the Kamalbinayak community with quality bakery products</p>
+            <div class="text-center p-6 bg-white rounded-lg shadow border border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Local Community</h3>
+                <p class="text-gray-600 text-sm">Proudly serving the Kamalbinayak community with quality bakery products</p>
             </div>
            
             <!-- Feature 3 -->
-            <div class="text-center p-6 sm:p-8 bg-linear-to-br from-amber-50 to-orange-50 rounded-lg shadow-md hover:shadow-lg transition duration-300 border border-amber-100">
-                <div class="w-14 h-14 bg-linear-to-br from-amber-100 to-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2v-1m8-9v2a2 2 0 002 2h2M7 8h-2a2 2 0 00-2 2v6a2 2 0 002 2h2v4l4-4h3a2 2 0 002-2v-1m-8-9v2a2 2 0 01-2 2H3"/>
-                    </svg>
-                </div>
-                <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-2">Celebration Specials</h3>
-                <p class="text-sm sm:text-base text-gray-600 leading-relaxed">Perfect cakes and treats for birthdays, anniversaries, and special occasions</p>
+            <div class="text-center p-6 bg-white rounded-lg shadow border border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Celebration Specials</h3>
+                <p class="text-gray-600 text-sm">Perfect cakes and treats for birthdays, anniversaries, and special occasions</p>
             </div>
         </div>
     </div>
@@ -229,38 +220,5 @@ document.querySelectorAll('.add-to-cart-form-home').forEach(form => {
 });
 </script>
 
-<style>
-@keyframes slide-in {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-.animate-slide-in {
-    animation: slide-in 0.3s ease-out;
-}
-
-@keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-}
-
-.animate-float {
-    animation: float 3s ease-in-out infinite;
-}
-
-@media (max-width: 640px) {
-    #ajax-notifications {
-        left: 4px;
-        right: 4px;
-        max-width: calc(100% - 8px);
-    }
-}
-</style>
 
 {% endblock %}

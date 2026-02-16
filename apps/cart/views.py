@@ -91,6 +91,15 @@ def cart_add(request, product_id):
             messages.error(request, msg)
             return redirect('products:product_list')
         
+        # Check stock quantity
+        if hasattr(product, 'stock_quantity') and product.stock_quantity > 0:
+            if not product.has_stock(quantity):
+                msg = f"Sorry, only {product.stock_quantity} units of {product.name} available."
+                if is_ajax:
+                    return JsonResponse({'success': False, 'message': msg}, status=400)
+                messages.error(request, msg)
+                return redirect('products:product_list')
+        
         max_warning = None
         cart, created = Cart.objects.get_or_create(user=request.user)
         
@@ -212,6 +221,17 @@ def cart_update(request, product_id):
         
         if quantity > 20:
             quantity = 20
+        
+        # Check stock availability
+        if hasattr(product, 'stock_quantity') and product.stock_quantity > 0:
+            if not product.has_stock(quantity):
+                if is_ajax:
+                    return JsonResponse({
+                        'success': False,
+                        'message': f"Sorry, only {product.stock_quantity} units available."
+                    }, status=400)
+                messages.error(request, f"Sorry, only {product.stock_quantity} units available.")
+                return redirect('cart:cart_detail')
         
         cart_item = CartItem.objects.get(cart=cart, product=product)
         cart_item.quantity = quantity

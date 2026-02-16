@@ -76,6 +76,10 @@ class Product(models.Model):
     available = models.BooleanField(default=True)
     is_featured = models.BooleanField(default=False)
     in_stock = models.BooleanField(default=True)
+    stock_quantity = models.PositiveIntegerField(
+        default=0,
+        help_text="Available stock quantity. Set to 0 for unlimited stock (cakes/custom orders)"
+    )
     
     # Cake specific fields
     is_cake = models.BooleanField(default=False)
@@ -175,6 +179,39 @@ class Product(models.Model):
         if self.available_flavors:
             return [flavor.strip() for flavor in self.available_flavors.split(',')]
         return []
+    
+    def has_stock(self, quantity=1):
+        """Check if product has sufficient stock"""
+        # Cakes and custom orders (stock_quantity=0) are always available
+        if self.stock_quantity == 0:
+            return True
+        return self.stock_quantity >= quantity
+    
+    def reduce_stock(self, quantity):
+        """Reduce stock quantity after purchase"""
+        if self.stock_quantity > 0:  # Only reduce if tracking stock
+            self.stock_quantity -= quantity
+            if self.stock_quantity <= 0:
+                self.in_stock = False
+            self.save()
+    
+    def increase_stock(self, quantity):
+        """Increase stock quantity (for returns/restocking)"""
+        if self.stock_quantity >= 0:  # Only increase if tracking stock
+            self.stock_quantity += quantity
+            if self.stock_quantity > 0:
+                self.in_stock = True
+            self.save()
+    
+    @property
+    def stock_status(self):
+        """Return stock status as string"""
+        if self.stock_quantity == 0:
+            return "Made to Order"
+        elif self.stock_quantity <= 5:
+            return f"Low Stock ({self.stock_quantity} left)"
+        else:
+            return f"In Stock ({self.stock_quantity} available)"
     
     def get_detailed_description(self):
         """Get or create detailed description for the product"""

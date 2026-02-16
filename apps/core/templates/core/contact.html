@@ -4,11 +4,11 @@
 
 {% block content %}
 <!-- Hero Section -->
-<section class="bg-linear-to-br from-amber-50 to-orange-50 py-12 sm:py-16 md:py-20">
+<section class="bg-amber-50 py-10 sm:py-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center">
-            <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 mb-3 sm:mb-4">Contact Us</h1>
-            <p class="text-base sm:text-lg md:text-xl text-gray-600">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Contact Us</h1>
+            <p class="text-base sm:text-lg text-gray-700">
                 Visit our bakery in Kamalbinayak or get in touch online
             </p>
         </div>
@@ -16,12 +16,12 @@
 </section>
 
 <!-- Contact Information & Form -->
-<section class="py-12 sm:py-16 md:py-20 bg-white">
+<section class="py-12 bg-white">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
             <!-- Contact Information -->
             <div class="order-2 lg:order-1">
-                <h2 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-6 sm:mb-8">Visit Our Bakery</h2>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">Visit Our Bakery</h2>
                
                 <div class="space-y-6 sm:space-y-8 mb-8">
                     <!-- Address -->
@@ -105,7 +105,7 @@
 
             <!-- Contact Form -->
             <div class="order-1 lg:order-2">
-                <h2 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-6 sm:mb-8">Send us a Message</h2>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">Send us a Message</h2>
             
                 <form method="post" class="space-y-4 sm:space-y-6">
                     {% csrf_token %}
@@ -188,7 +188,7 @@
                 
                     <!-- Submit Button -->
                     <button type="submit"
-                            class="w-full bg-linear-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold py-3 px-6 rounded-lg text-base sm:text-lg transition duration-200 shadow-lg hover:shadow-xl">
+                            class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-6 rounded-lg text-base sm:text-lg transition shadow hover:shadow-lg">
                         Send Message
                     </button>
                 </form>
@@ -198,45 +198,45 @@
 </section>
 
 <!-- FAQ Section -->
-<section class="py-12 sm:py-16 md:py-20 bg-gray-50">
+<section class="py-12 bg-gray-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="text-center mb-8 sm:mb-12">
-            <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-2 sm:mb-4">Frequently Asked Questions</h2>
-            <p class="text-base sm:text-lg text-gray-600">Quick answers to common questions</p>
+        <div class="text-center mb-8">
+            <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Frequently Asked Questions</h2>
+            <p class="text-base text-gray-600">Quick answers to common questions</p>
         </div>
        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- FAQ 1 -->
-            <div class="bg-white p-6 sm:p-8 rounded-lg shadow-lg hover:shadow-xl transition duration-300 border border-gray-100">
-                <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">Do you deliver outside Kamalbinayak?</h3>
-                <p class="text-gray-600 text-sm sm:text-base leading-relaxed">
+            <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition border border-gray-200">
+                <h3 class="text-lg font-bold text-gray-900 mb-3">Do you deliver outside Kamalbinayak?</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">
                     Yes! We deliver across Bhaktapur and surrounding areas.
                     Delivery charges may vary based on location. Contact us for specific delivery areas.
                 </p>
             </div>
            
             <!-- FAQ 2 -->
-            <div class="bg-white p-6 sm:p-8 rounded-lg shadow-lg hover:shadow-xl transition duration-300 border border-gray-100">
-                <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">Can I order custom cakes for special occasions?</h3>
-                <p class="text-gray-600 text-sm sm:text-base leading-relaxed">
+            <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition border border-gray-200">
+                <h3 class="text-lg font-bold text-gray-900 mb-3">Can I order custom cakes for special occasions?</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">
                     Absolutely! We specialize in custom cakes for birthdays, anniversaries, and celebrations.
                     Please contact us at least 3 days in advance for custom orders to ensure availability.
                 </p>
             </div>
            
             <!-- FAQ 3 -->
-            <div class="bg-white p-6 sm:p-8 rounded-lg shadow-lg hover:shadow-xl transition duration-300 border border-gray-100">
-                <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">Do you accept bulk orders for events?</h3>
-                <p class="text-gray-600 text-sm sm:text-base leading-relaxed">
+            <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition border border-gray-200">
+                <h3 class="text-lg font-bold text-gray-900 mb-3">Do you accept bulk orders for events?</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">
                     Yes, we cater to events and parties. For bulk orders, we recommend placing your order
                     at least one week in advance. Contact us directly for bulk order pricing and options.
                 </p>
             </div>
 
             <!-- FAQ 4 -->
-            <div class="bg-white p-6 sm:p-8 rounded-lg shadow-lg hover:shadow-xl transition duration-300 border border-gray-100">
-                <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4">What payment methods do you accept?</h3>
-                <p class="text-gray-600 text-sm sm:text-base leading-relaxed">
+            <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition border border-gray-200">
+                <h3 class="text-lg font-bold text-gray-900 mb-3">What payment methods do you accept?</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">
                     We accept cash and mobile banking (eSewa).
                     All online payments are secure and encrypted for your safety.
                 </p>

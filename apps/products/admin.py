@@ -43,7 +43,7 @@ class CategoryAdmin(ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(ModelAdmin):
-    list_display = ['name', 'category', 'display_price', 'display_image', 'available', 'is_featured', 'is_cake', 'in_stock', 'created_at']
+    list_display = ['name', 'category', 'display_price', 'display_stock', 'display_image', 'available', 'is_featured', 'is_cake', 'in_stock', 'created_at']
     list_filter = ['category', 'available', 'is_featured', 'is_cake', 'in_stock', 'created_at']
     search_fields = ['name', 'short_description', 'description', 'category__name']
     list_editable = ['available', 'is_featured', 'is_cake', 'in_stock']
@@ -56,6 +56,10 @@ class ProductAdmin(ModelAdmin):
         }),
         ('Pricing & Availability', {
             'fields': ('base_price', 'available', 'in_stock', 'is_featured')
+        }),
+        ('Stock Management', {
+            'fields': ('stock_quantity',),
+            'description': 'Set to 0 for unlimited stock (cakes/made-to-order items). Set to specific number for inventory tracking.',
         }),
         ('Product Details', {
             'fields': ('weight', 'display_weight')
@@ -77,6 +81,16 @@ class ProductAdmin(ModelAdmin):
     def display_price(self, obj):
         return f"Rs. {obj.base_price}"
     display_price.short_description = "Price"
+    
+    def display_stock(self, obj):
+        """Display stock status with color coding"""
+        if obj.stock_quantity == 0:
+            return format_html('<span style="color: #10b981; font-weight: 500;">Made to Order</span>')
+        elif obj.stock_quantity <= 5:
+            return format_html('<span style="color: #f59e0b; font-weight: 500;">{} left</span>', obj.stock_quantity)
+        else:
+            return format_html('<span style="color: #3b82f6; font-weight: 500;">{} in stock</span>', obj.stock_quantity)
+    display_stock.short_description = "Stock"
     
     def display_image(self, obj):
         if obj.image:
