@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse, path
 from django.utils.safestring import mark_safe
+from django.http import HttpResponse
 from decimal import Decimal
 from .models import Order, OrderItem, CakeDesignReference
 from unfold.admin import ModelAdmin
@@ -81,13 +82,14 @@ class OrderItemInline(admin.TabularInline):
 class OrderAdmin(ModelAdmin, ImportExportModelAdmin):
     list_display = ['order_id_display', 'order_number', 'user_info', 'total_amount_display', 
                     'status_display', 'payment_method_display', 'payment_status_display',
-                    'delivery_type_display', 'item_count', 'created_at']
+                    'delivery_type_display', 'item_count', 'created_at', 'download_receipt_button']
     list_filter = ['status', 'payment_method', 'payment_status', 'delivery_type', 'created_at']
     search_fields = ['order_number', 'user__username', 'user__email', 
                      'user__first_name', 'user__last_name', 'phone_number']
     readonly_fields = ['order_number', 'created_at', 'updated_at', 'total_amount_display',
                       'item_count_display', 'order_link', 'user_info_display',
-                      'subtotal_display', 'delivery_fee_display', 'payment_status_display']
+                      'subtotal_display', 'delivery_fee_display', 'payment_status_display',
+                      'download_receipt_link']
     inlines = [OrderItemInline]
     list_per_page = 20
     date_hierarchy = 'created_at'
@@ -108,7 +110,7 @@ class OrderAdmin(ModelAdmin, ImportExportModelAdmin):
     fieldsets = (
         ('Order Information', {
             'fields': ('order_link', 'order_number', 'user_info_display', 'status', 
-                      'delivery_type', 'item_count_display')
+                      'delivery_type', 'item_count_display', 'download_receipt_link')
         }),
         ('Payment Details', {
             'fields': ('payment_method', 'payment_status', 'payment_transaction'),
@@ -221,6 +223,63 @@ class OrderAdmin(ModelAdmin, ImportExportModelAdmin):
         return format_html('<a href="{}">Edit Order #{}</a>', url, obj.id)
     order_link.short_description = 'Order'
     
+    def download_receipt_button(self, obj):
+        """Display download receipt button in list view"""
+        url = reverse('admin:download_order_receipt', args=[obj.id])
+        return format_html(
+            '<a href="{}" class="button" style="padding: 5px 10px; background-color: #d97706; color: white; text-decoration: none; border-radius: 4px; font-size: 12px;">Download</a>',
+            url
+        )
+    download_receipt_button.short_description = 'Receipt'
+    
+    def download_receipt_link(self, obj):
+        """Display download receipt link in detail view"""
+        url = reverse('admin:download_order_receipt', args=[obj.id])
+        return format_html(
+            '<a href="{}" class="button" style="padding: 10px 20px; background-color: #d97706; color: white; text-decoration: none; border-radius: 6px; font-size: 14px; display: inline-block;">📄 Download Receipt/Invoice</a>',
+            url
+        )
+    download_receipt_link.short_description = 'Download Receipt'
+    
+    def get_urls(self):
+        """Add custom URL for downloading receipt"""
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                '<int:order_id>/download-receipt/',
+                self.admin_site.admin_view(self.download_receipt_view),
+                name='download_order_receipt',
+            ),
+        ]
+        return custom_urls + urls
+    
+    def download_receipt_view(self, request, order_id):
+        """Generate and download receipt PDF for an order"""
+        try:
+            order = Order.objects.get(id=order_id)
+            
+            # Import the invoice generator
+            from utils.invoice_generator import InvoiceGenerator
+            
+            # Generate the PDF
+            generator = InvoiceGenerator(order)
+            pdf = generator.generate()
+            
+            # Create HTTP response with PDF
+            response = HttpResponse(pdf, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="Live_Bakery_Receipt_{order.order_number}.pdf"'
+            
+            return response
+            
+        except Order.DoesNotExist:
+            from django.contrib import messages
+            messages.error(request, f'Order with ID {order_id} not found.')
+            return HttpResponse('Order not found', status=404)
+        except Exception as e:
+            from django.contrib import messages
+            messages.error(request, f'Error generating receipt: {str(e)}')
+            return HttpResponse(f'Error generating receipt: {str(e)}', status=500)
+    
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('user', 'payment_transaction').prefetch_related('items', 'items__product')
     
@@ -238,60 +297,20 @@ class OrderAdmin(ModelAdmin, ImportExportModelAdmin):
     
     def mark_as_confirmed(self, request, queryset):
         """Mark selected orders as confirmed"""
-        from apps.core.email_utils import send_order_status_update_email
-        
-        updated_count = 0
-        email_sent_count = 0
-        
-        for order in queryset:
-            old_status = order.status
-            if old_status != 'confirmed':
-                order.status = 'confirmed'
-                order.save()
-                updated_count += 1
-                
-                # Send email notification
-                try:
-                    if send_order_status_update_email(order, old_status):
-                        email_sent_count += 1
-                except Exception as e:
-                    self.message_user(request, f"Error sending email for order {order.order_number}: {e}", level='WARNING')
+        updated_count = queryset.update(status='confirmed')
         
         if updated_count > 0:
-            message = f"✅ {updated_count} order(s) marked as confirmed."
-            if email_sent_count > 0:
-                message += f" Email notifications sent to {email_sent_count} customer(s)."
-            self.message_user(request, message)
+            self.message_user(request, f"✅ {updated_count} order(s) marked as confirmed. Email notifications will be sent automatically.")
         else:
             self.message_user(request, "No orders were updated (they may already be confirmed).")
     mark_as_confirmed.short_description = "📋 Mark as confirmed"
     
     def mark_as_baking(self, request, queryset):
         """Mark selected orders as baking"""
-        from apps.core.email_utils import send_order_status_update_email
-        
-        updated_count = 0
-        email_sent_count = 0
-        
-        for order in queryset:
-            old_status = order.status
-            if old_status != 'baking':
-                order.status = 'baking'
-                order.save()
-                updated_count += 1
-                
-                # Send email notification
-                try:
-                    if send_order_status_update_email(order, old_status):
-                        email_sent_count += 1
-                except Exception as e:
-                    self.message_user(request, f"Error sending email for order {order.order_number}: {e}", level='WARNING')
+        updated_count = queryset.update(status='baking')
         
         if updated_count > 0:
-            message = f"✅ {updated_count} order(s) marked as baking."
-            if email_sent_count > 0:
-                message += f" Email notifications sent to {email_sent_count} customer(s)."
-            self.message_user(request, message)
+            self.message_user(request, f"✅ {updated_count} order(s) marked as baking. Email notifications will be sent automatically.")
         else:
             self.message_user(request, "No orders were updated (they may already be baking).")
     mark_as_baking.short_description = "👨‍🍳 Mark as baking"
@@ -305,90 +324,30 @@ class OrderAdmin(ModelAdmin, ImportExportModelAdmin):
         
         Customers will receive an email notification with appropriate instructions.
         """
-        from apps.core.email_utils import send_order_status_update_email
-        
-        updated_count = 0
-        email_sent_count = 0
-        
-        for order in queryset:
-            old_status = order.status
-            if old_status != 'ready':
-                order.status = 'ready'
-                order.save()
-                updated_count += 1
-                
-                # Send email notification
-                try:
-                    if send_order_status_update_email(order, old_status):
-                        email_sent_count += 1
-                except Exception as e:
-                    self.message_user(request, f"Error sending email for order {order.order_number}: {e}", level='WARNING')
+        updated_count = queryset.update(status='ready')
         
         if updated_count > 0:
-            message = f"✅ {updated_count} order(s) marked as ready for pickup/delivery."
-            if email_sent_count > 0:
-                message += f" Email notifications sent to {email_sent_count} customer(s)."
-            self.message_user(request, message)
+            self.message_user(request, f"✅ {updated_count} order(s) marked as ready for pickup/delivery. Email notifications will be sent automatically.")
         else:
             self.message_user(request, "No orders were updated (they may already be ready).")
     mark_as_ready.short_description = "📦 Mark as ready (pickup/delivery)"
     
     def mark_as_completed(self, request, queryset):
         """Mark selected orders as completed"""
-        from apps.core.email_utils import send_order_status_update_email
-        
-        updated_count = 0
-        email_sent_count = 0
-        
-        for order in queryset:
-            old_status = order.status
-            if old_status != 'completed':
-                order.status = 'completed'
-                order.save()
-                updated_count += 1
-                
-                # Send email notification
-                try:
-                    if send_order_status_update_email(order, old_status):
-                        email_sent_count += 1
-                except Exception as e:
-                    self.message_user(request, f"Error sending email for order {order.order_number}: {e}", level='WARNING')
+        updated_count = queryset.update(status='completed')
         
         if updated_count > 0:
-            message = f"✅ {updated_count} order(s) marked as completed."
-            if email_sent_count > 0:
-                message += f" Email notifications sent to {email_sent_count} customer(s)."
-            self.message_user(request, message)
+            self.message_user(request, f"✅ {updated_count} order(s) marked as completed. Email notifications will be sent automatically.")
         else:
             self.message_user(request, "No orders were updated (they may already be completed).")
     mark_as_completed.short_description = "🏁 Mark as completed"
     
     def mark_as_cancelled(self, request, queryset):
         """Mark selected orders as cancelled"""
-        from apps.core.email_utils import send_order_status_update_email
-        
-        updated_count = 0
-        email_sent_count = 0
-        
-        for order in queryset:
-            old_status = order.status
-            if old_status != 'cancelled':
-                order.status = 'cancelled'
-                order.save()
-                updated_count += 1
-                
-                # Send email notification
-                try:
-                    if send_order_status_update_email(order, old_status):
-                        email_sent_count += 1
-                except Exception as e:
-                    self.message_user(request, f"Error sending email for order {order.order_number}: {e}", level='WARNING')
+        updated_count = queryset.update(status='cancelled')
         
         if updated_count > 0:
-            message = f"❌ {updated_count} order(s) marked as cancelled."
-            if email_sent_count > 0:
-                message += f" Email notifications sent to {email_sent_count} customer(s)."
-            self.message_user(request, message)
+            self.message_user(request, f"❌ {updated_count} order(s) marked as cancelled. Email notifications will be sent automatically.")
         else:
             self.message_user(request, "No orders were updated (they may already be cancelled).")
     mark_as_cancelled.short_description = "❌ Mark as cancelled"
