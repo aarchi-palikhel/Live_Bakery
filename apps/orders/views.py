@@ -386,12 +386,38 @@ def order_create(request):
                                         # Read the image file from customization
                                         image_file = customization.reference_image
                                         
+                                        # Build comprehensive description with all customization details
+                                        description_parts = []
+                                        
+                                        # Add reference description if provided
+                                        if customization.reference_description:
+                                            description_parts.append(f"Design Notes: {customization.reference_description}")
+                                        
+                                        # Add message on cake if provided
+                                        if customization.message_on_cake:
+                                            description_parts.append(f"Message on Cake: {customization.message_on_cake}")
+                                        
+                                        # Add special instructions if provided
+                                        if customization.special_instructions:
+                                            description_parts.append(f"Special Instructions: {customization.special_instructions}")
+                                        
+                                        # Add cake details
+                                        weight_display = customization.display_weight
+                                        description_parts.append(f"Weight: {weight_display}")
+                                        description_parts.append(f"Tiers: {customization.cake_tiers}")
+                                        
+                                        if customization.delivery_date:
+                                            description_parts.append(f"Delivery Date: {customization.delivery_date.strftime('%B %d, %Y')}")
+                                        
+                                        # Combine all parts
+                                        full_description = "\n".join(description_parts) if description_parts else "Custom cake order"
+                                        
                                         # Create CakeDesignReference with the image
                                         design_ref = CakeDesignReference(
                                             order=order,
                                             order_item=order_item,
-                                            title=customization.reference_title or f"Design for {order_item.product.name}",
-                                            description=customization.reference_description or f"Custom cake order",
+                                            title=customization.reference_title or f"Cake Design: {order_item.product.name}",
+                                            description=full_description,
                                         )
                                         
                                         # Copy the image file

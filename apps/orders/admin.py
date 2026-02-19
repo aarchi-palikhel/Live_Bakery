@@ -474,7 +474,8 @@ class CakeDesignReferenceAdmin(ModelAdmin):
     search_fields = ['title', 'description', 'order__order_number', 
                      'order_item__product__name', 'order__user__username']
     readonly_fields = ['order_link', 'order_item_link', 'product_info_display',
-                      'image_preview_large', 'download_link', 'uploaded_at_display']
+                      'cake_customization_details', 'image_preview_large', 
+                      'download_link', 'uploaded_at_display']
     list_per_page = 20
     date_hierarchy = 'uploaded_at'
     
@@ -483,7 +484,7 @@ class CakeDesignReferenceAdmin(ModelAdmin):
             'fields': ('order_link', 'order_item_link', 'product_info_display')
         }),
         ('Design Details', {
-            'fields': ('title', 'description')
+            'fields': ('title', 'description', 'cake_customization_details')
         }),
         ('Image', {
             'fields': ('image', 'image_preview_large', 'download_link')
@@ -604,6 +605,37 @@ class CakeDesignReferenceAdmin(ModelAdmin):
             return mark_safe('<br>'.join(details))
         return "—"
     product_info_display.short_description = 'Product Details'
+    
+    def cake_customization_details(self, obj):
+        """Display all cake customization details from the order item"""
+        if obj.order_item and obj.order_item.is_cake:
+            details = []
+            
+            # Add all customization fields
+            if obj.order_item.cake_flavor:
+                details.append(f"<strong>🎨 Flavor:</strong> {obj.order_item.display_flavor}")
+            
+            if obj.order_item.cake_weight:
+                details.append(f"<strong>⚖️ Weight:</strong> {obj.order_item.display_weight}")
+            
+            if obj.order_item.cake_tiers:
+                details.append(f"<strong>🎂 Tiers:</strong> {obj.order_item.cake_tiers}")
+            
+            if obj.order_item.message_on_cake:
+                details.append(f"<strong>💬 Message on Cake:</strong> <span style='background-color: #fef3c7; padding: 4px 8px; border-radius: 4px; font-style: italic;'>\"{obj.order_item.message_on_cake}\"</span>")
+            
+            if obj.order_item.delivery_date:
+                details.append(f"<strong>📅 Delivery Date:</strong> {obj.order_item.delivery_date.strftime('%B %d, %Y')}")
+            
+            if obj.order_item.special_instructions:
+                details.append(f"<strong>📝 Special Instructions:</strong> <div style='background-color: #f3f4f6; padding: 8px; border-radius: 4px; margin-top: 4px;'>{obj.order_item.special_instructions}</div>")
+            
+            if details:
+                return mark_safe('<div style="line-height: 1.8;">' + '<br>'.join(details) + '</div>')
+            else:
+                return format_html('<span style="color: gray; font-style: italic;">No customization details</span>')
+        return format_html('<span style="color: gray; font-style: italic;">Not a cake item</span>')
+    cake_customization_details.short_description = '🎂 Cake Customization Details'
     
     def uploaded_at_display(self, obj):
         return obj.uploaded_at.strftime('%Y-%m-%d %H:%M:%S')
