@@ -27,9 +27,15 @@ def get_cart_totals(cart):
     
     return total_items, total_price
 
-@customer_required
+@login_required
 def cart_detail(request):
     """Display the cart contents"""
+    # Check if user is staff or admin
+    if request.user.user_type in ['staff', 'owner'] or request.user.is_superuser:
+        return render(request, 'cart/cart_staff_message.html', {
+            'user_type': request.user.user_type
+        })
+    
     try:
         cart, created = Cart.objects.get_or_create(user=request.user)
         cart_items = cart.items.all().select_related('product', 'product__category')

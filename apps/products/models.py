@@ -188,19 +188,22 @@ class Product(models.Model):
         return self.stock_quantity >= quantity
     
     def reduce_stock(self, quantity):
-        """Reduce stock quantity after purchase"""
+        """Reduce stock quantity after purchase and auto-disable if out of stock"""
         if self.stock_quantity > 0:  # Only reduce if tracking stock
             self.stock_quantity -= quantity
             if self.stock_quantity <= 0:
+                self.stock_quantity = 0
                 self.in_stock = False
+                self.available = False  # Also mark as unavailable
             self.save()
     
     def increase_stock(self, quantity):
-        """Increase stock quantity (for returns/restocking)"""
+        """Increase stock quantity and auto-enable if back in stock"""
         if self.stock_quantity >= 0:  # Only increase if tracking stock
             self.stock_quantity += quantity
             if self.stock_quantity > 0:
                 self.in_stock = True
+                self.available = True  # Also mark as available
             self.save()
     
     @property

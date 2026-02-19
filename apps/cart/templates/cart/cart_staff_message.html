@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Cart - Live Bakery{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto my-12 px-4">
+    <div class="bg-white rounded-lg shadow-lg p-8 border border-gray-200">
+        <div class="text-center">
+            <!-- Icon -->
+            <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-amber-100 mb-6">
+                <svg class="h-10 w-10 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                </svg>
+            </div>
+            
+            <!-- Title -->
+            <h2 class="text-2xl font-bold text-gray-900 mb-3">Cart Access Restricted</h2>
+            
+            <!-- Message -->
+            <p class="text-gray-600 mb-6">
+                You are currently logged in as 
+                <span class="font-semibold text-amber-700">
+                    {% if user_type == 'staff' %}Staff{% elif user_type == 'owner' %}Admin{% else %}Staff/Admin{% endif %}
+                </span>.
+            </p>
+            
+            <!-- Action Box -->
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-6 mb-6 text-left">
+                <h3 class="text-sm font-semibold text-amber-900 mb-3">🛍️ Want to place an order?</h3>
+                <ol class="text-sm text-amber-800 space-y-2 list-decimal list-inside">
+                    <li>Log out from your current account</li>
+                    <li>Log in with a customer account</li>
+                    <li>Browse products and add to cart</li>
+                    <li>Complete your order</li>
+                </ol>
+            </div>
+            
+            <!-- Buttons -->
+            <div class="space-y-3">
+                <a href="{% url 'users:logout' %}" class="block w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 transition">
+                    Log Out
+                </a>
+                <a href="{% url 'admin:index' %}" class="block w-full py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition">
+                    Go to Admin Dashboard
+                </a>
+                <a href="{% url 'core:home' %}" class="block w-full py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition">
+                    Go to Home
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Help Section -->
+    <div class="mt-6 text-center">
+        <p class="text-sm text-gray-600">
+            Need help? Contact us at 
+            <a href="mailto:hello@livebakery.com" class="text-amber-600 hover:text-amber-700 font-medium">hello@livebakery.com</a>
+            or call 
+            <a href="tel:+97716612345" class="text-amber-600 hover:text-amber-700 font-medium">+977 1-6612345</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

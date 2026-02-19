@@ -46,7 +46,11 @@
         
         <!-- Stock Status -->
         <div class="mb-3">
-            {% if product.stock_quantity == 0 %}
+            {% if not product.in_stock or not product.available %}
+                <span class="inline-block bg-red-50 text-red-700 px-3 py-1 rounded text-xs font-semibold border border-red-200">
+                    ⚠️ Out of Stock
+                </span>
+            {% elif product.stock_quantity == 0 %}
                 <span class="inline-block bg-green-50 text-green-700 px-3 py-1 rounded text-xs font-medium border border-green-200">
                     Made to Order
                 </span>
@@ -78,7 +82,7 @@
             </div>
             
             {% if product.in_stock and product.available %}
-                {% if user.is_authenticated %}
+                {% if user.is_authenticated and user.user_type == 'customer' %}
                     <form method="post" action="{% url 'cart:cart_add' product.id %}" class="add-to-cart-form" data-product-id="{{ product.id }}">
                         {% csrf_token %}
                         <input type="hidden" name="quantity" value="1">
@@ -87,14 +91,16 @@
                             Add
                         </button>
                     </form>
+                {% elif user.is_authenticated %}
+                    <span class="text-xs text-gray-500 italic">Staff/Admin</span>
                 {% else %}
                     <a href="{% url 'users:login' %}" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded transition text-sm font-medium">
                         Login
                     </a>
                 {% endif %}
             {% else %}
-                <button disabled class="bg-gray-300 text-gray-600 px-4 py-2 rounded text-sm font-medium cursor-not-allowed">
-                    Unavailable
+                <button disabled class="bg-red-100 text-red-700 px-4 py-2 rounded text-sm font-semibold cursor-not-allowed border border-red-200">
+                    Out of Stock
                 </button>
             {% endif %}
         </div>

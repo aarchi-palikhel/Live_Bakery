@@ -92,26 +92,34 @@
                     
                     <div class="flex justify-between items-center">
                         <span class="text-2xl font-bold text-amber-700">Rs. {{ product.base_price }}</span>
-                        {% if user.is_authenticated %}
-                            {% if product.is_cake %}
-                                <a href="{% url 'orders:customize_cake' product.id %}" 
-                                   class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm font-medium transition">
-                                    Customize
-                                </a>
+                        {% if product.in_stock and product.available %}
+                            {% if user.is_authenticated and user.user_type == 'customer' %}
+                                {% if product.is_cake %}
+                                    <a href="{% url 'orders:customize_cake' product.id %}" 
+                                       class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm font-medium transition">
+                                        Customize
+                                    </a>
+                                {% else %}
+                                    <form method="post" action="{% url 'cart:cart_add' product.id %}" class="add-to-cart-form-home" data-product-id="{{ product.id }}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="quantity" value="1">
+                                        <input type="hidden" name="override" value="false">
+                                        <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition" data-product-id="{{ product.id }}">
+                                            Add to Cart
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            {% elif user.is_authenticated %}
+                                <span class="text-xs text-gray-500 italic">Staff/Admin</span>
                             {% else %}
-                                <form method="post" action="{% url 'cart:cart_add' product.id %}" class="add-to-cart-form-home" data-product-id="{{ product.id }}">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="quantity" value="1">
-                                    <input type="hidden" name="override" value="false">
-                                    <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition" data-product-id="{{ product.id }}">
-                                        Add to Cart
-                                    </button>
-                                </form>
+                                <a href="{% url 'users:login' %}" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded text-sm font-medium transition">
+                                    Login
+                                </a>
                             {% endif %}
                         {% else %}
-                            <a href="{% url 'users:login' %}" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded text-sm font-medium transition">
-                                Login
-                            </a>
+                            <button disabled class="bg-red-100 text-red-700 px-3 py-2 rounded text-sm font-semibold cursor-not-allowed border border-red-200">
+                                Out of Stock
+                            </button>
                         {% endif %}
                     </div>
                 </div>

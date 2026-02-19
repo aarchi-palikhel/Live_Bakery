@@ -210,6 +210,21 @@ CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'False').lower() == 'true'
 SECURE_BROWSER_XSS_FILTER = os.getenv('SECURE_BROWSER_XSS_FILTER', 'True').lower() == 'true'
 SECURE_CONTENT_TYPE_NOSNIFF = os.getenv('SECURE_CONTENT_TYPE_NOSNIFF', 'True').lower() == 'true'
 
+# CSRF Configuration
+CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript to read CSRF token if needed
+CSRF_COOKIE_SAMESITE = 'Lax'  # Balance between security and usability
+CSRF_USE_SESSIONS = False  # Store CSRF token in cookie, not session
+CSRF_COOKIE_AGE = 31449600  # 1 year (same as Django default)
+
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+
+# If you have a production domain, add it here
+# CSRF_TRUSTED_ORIGINS += ['https://yourdomain.com']
+
 # Session Configuration for Remember Me functionality
 SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds (default for remember me)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Allow persistent sessions

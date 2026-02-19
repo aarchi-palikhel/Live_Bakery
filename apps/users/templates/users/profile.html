@@ -4,55 +4,95 @@
 
 {% block content %}
 <div class="max-w-4xl mx-auto my-8 p-6 bg-white rounded-lg shadow-md">
-    <!-- user type badge -->
+    <!-- User type badge -->
     <div class="flex items-center justify-between mb-6">
-        <h2 class="text-2xl font-bold text-[#8f3232]">My Profile</h2>
-        <span class="px-3 py-1 text-2xl font-bold text-[#8f3232] rounded-full">
-            {% if user.is_staff %}Admin{% else %}Customer{% endif %}
+        <h2 class="text-2xl font-bold text-amber-700">My Profile</h2>
+        <span class="px-4 py-2 text-sm font-bold rounded-full
+            {% if is_owner %}bg-purple-100 text-purple-700
+            {% elif is_staff %}bg-blue-100 text-blue-700
+            {% else %}bg-green-100 text-green-700{% endif %}">
+            {% if is_owner %}Owner
+            {% elif is_staff %}Staff
+            {% else %}Customer{% endif %}
         </span>
     </div>
     
     <div class="grid md:grid-cols-2 gap-6">
         <div>
-            <h3 class="text-lg font-semibold mb-4">Account Information</h3>
-            <div class="space-y-3">
-                <p><strong>Full Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
-                <p><strong>Username:</strong> {{ user.username }}</p>
-                <p><strong>Email:</strong> {{ user.email|default:"Not provided" }}</p>
-                <p><strong>Mobile:</strong> {{ user.mobile_no|default:"Not provided" }}</p>
+            <h3 class="text-lg font-semibold mb-4 text-gray-900">Account Information</h3>
+            <div class="space-y-3 text-gray-700">
+                <p><strong class="text-gray-900">Full Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+                <p><strong class="text-gray-900">Username:</strong> {{ user.username }}</p>
+                <p><strong class="text-gray-900">Email:</strong> {{ user.email|default:"Not provided" }}</p>
+                <p><strong class="text-gray-900">Mobile:</strong> {{ user.mobile_no|default:"Not provided" }}</p>
                 {% if user.delivery_address %}
-                <p><strong>Delivery Address:</strong> {{ user.delivery_address }}</p>
+                <p><strong class="text-gray-900">Delivery Address:</strong> {{ user.delivery_address }}</p>
                 {% endif %}
-                <p><strong>User Type:</strong> {% if user.is_staff %}Admin{% else %}Customer{% endif %}</p>
-                <p><strong>Member since:</strong> {{ user.date_joined|date:"F j, Y" }}</p>
+                <p><strong class="text-gray-900">User Type:</strong> 
+                    {% if is_owner %}Owner
+                    {% elif is_staff %}Staff
+                    {% else %}Customer{% endif %}
+                </p>
+                <p><strong class="text-gray-900">Member since:</strong> {{ user.date_joined|date:"F j, Y" }}</p>
             </div>
         </div>
         
         <div>
-            <h3 class="text-lg font-semibold mb-4">Quick Actions</h3>
+            <h3 class="text-lg font-semibold mb-4 text-gray-900">Quick Actions</h3>
             <div class="space-y-3">
-                {% if not user.is_staff %}
+                {% if is_customer %}
                 <!-- Customer Actions -->
-                <a href="{% url 'orders:order_list' %}" class="block border bg-[#eec1ad] border-[#8f3232] text-[#8f3232] p-3 rounded text-center hover:bg-[#dbac98] font-medium">
+                <a href="{% url 'orders:order_list' %}" class="block bg-amber-50 border border-amber-600 text-amber-700 p-3 rounded text-center hover:bg-amber-100 font-medium transition">
                     📦 View My Orders
                 </a>
-                <a href="{% url 'cart:cart_detail' %}" class="block border bg-[#eec1ad] border-[#8f3232] text-[#8f3232] p-3 rounded text-center hover:bg-[#8f3232] hover:text-white font-medium">
+                <a href="{% url 'cart:cart_detail' %}" class="block bg-amber-50 border border-amber-600 text-amber-700 p-3 rounded text-center hover:bg-amber-600 hover:text-white font-medium transition">
                     🛒 View My Cart
                 </a>
-                <a href="{% url 'products:product_list' %}" class="block border bg-[#eec1ad] border-[#8f3232] text-[#8f3232] p-3 rounded text-center hover:bg-[#8f3232] hover:text-white font-medium">
+                <a href="{% url 'products:product_list' %}" class="block bg-amber-50 border border-amber-600 text-amber-700 p-3 rounded text-center hover:bg-amber-600 hover:text-white font-medium transition">
                     🍞 Continue Shopping
                 </a>
-                {% else %}
-                <!-- Admin Actions -->
-                <a href="{% url 'admin:index' %}" class="block bg-[#8f3232] text-white p-3 rounded text-center hover:bg-[#7a2a2a] font-medium">
-                    ⚙️ Admin Panel
+                
+                {% elif is_owner %}
+                <!-- Owner Actions -->
+                <a href="{% url 'admin:index' %}" class="block bg-purple-600 text-white p-3 rounded text-center hover:bg-purple-700 font-medium transition shadow">
+                    ⚙️ Admin Dashboard
                 </a>
-                <a href="{% url 'core:home' %}" class="block border border-[#8f3232] text-[#8f3232] p-3 rounded text-center hover:bg-[#8f3232] hover:text-white font-medium">
+                <a href="{% url 'core:home' %}" class="block bg-white border border-purple-600 text-purple-700 p-3 rounded text-center hover:bg-purple-50 font-medium transition">
+                    🏠 View Website
+                </a>
+                
+                {% elif is_staff %}
+                <!-- Staff Actions -->
+                <a href="{% url 'admin:index' %}" class="block bg-blue-600 text-white p-3 rounded text-center hover:bg-blue-700 font-medium transition shadow">
+                    ⚙️ Admin Dashboard
+                </a>
+                <a href="{% url 'core:home' %}" class="block bg-white border border-blue-600 text-blue-700 p-3 rounded text-center hover:bg-blue-50 font-medium transition">
                     🏠 View Website
                 </a>
                 {% endif %}
             </div>
         </div>
     </div>
+    
+    {% if is_staff or is_owner %}
+    <!-- Info box for staff/owner -->
+    <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                </svg>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-blue-800">
+                    {% if is_owner %}Owner Account{% else %}Staff Account{% endif %}
+                </h3>
+                <div class="mt-2 text-sm text-blue-700">
+                    <p>This is a {% if is_owner %}management{% else %}staff{% endif %} account. To place orders, please log in with a customer account.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

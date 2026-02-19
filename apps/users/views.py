@@ -5,12 +5,70 @@ from django.core.paginator import Paginator
 from django.contrib import messages
 from django.http import JsonResponse
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_protect
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.template.loader import render_to_string
 from apps.core.email_utils import send_template_email
 from .forms import CustomerCreationForm, CustomAuthenticationForm
 from .decoraters import customer_required, staff_required, owner_required, staff_or_owner_required
+from .models import CustomUser
+import threading
+import logging
+
+logger = logging.getLogger(__name__)
+
+def send_login_notification_email_async(user, request):
+    """
+    Send login notification email asynchronously in a separate thread
+    This prevents blocking the login process
+    """
+    def send_email_thread():
+        try:
+            if not user.email or not user.email.strip():
+                return
+            
+            # Get user's IP address
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            if x_forwarded_for:
+                ip_address = x_forwarded_for.split(',')[0]
+            else:
+                ip_address = request.META.get('REMOTE_ADDR')
+            
+            context = {
+                'user': user,
+                'customer_name': user.get_full_name() or user.username,
+                'login_time': timezone.now(),
+                'ip_address': ip_address,
+                'user_agent': request.META.get('HTTP_USER_AGENT', 'Unknown'),
+                'bakery_name': 'Live Bakery',
+            }
+            
+            subject = "Welcome to Live Bakery - First Login Notification"
+            
+            send_template_email(
+                to_email=user.email,
+                subject=subject,
+                template_name='emails/login_notification',
+                context=context,
+                fail_silently=True
+            )
+            logger.info(f"Login notification email sent to {user.email}")
+        except Exception as e:
+            logger.error(f"Error sending login notification email: {e}")
+    
+    # Start email sending in a separate thread
+    email_thread = threading.Thread(target=send_email_thread)
+    email_thread.daemon = True  # Thread will not prevent program from exiting
+    email_thread.start()
+    
+    return True  # Return immediately without waiting for email to send
+
 
 def send_login_notification_email(user, request):
     """
+    DEPRECATED: Use send_login_notification_email_async instead
     Send login notification email to user only if they have an email address registered
     """
     if not user.email or not user.email.strip():
@@ -43,6 +101,7 @@ def send_login_notification_email(user, request):
         fail_silently=True  # Don't break login process if email fails
     )
 
+@csrf_protect
 def custom_login(request):
     if request.user.is_authenticated:
         if request.user.user_type == 'owner' or request.user.is_superuser:
@@ -97,24 +156,12 @@ def custom_login(request):
                     
                     first_name = user.first_name if user.first_name else user.username
                     
-                    # Send login notification email only for first-time logins (and only if user has email and remember me is not checked)
-                    email_sent = False
+                    # Send login notification email asynchronously for first-time logins
                     is_first_login = not user.first_login_completed
                     
-                    if not remember_me and user.email and is_first_login:
-                        # Check if we already sent a login email recently to prevent duplicates
-                        import time
-                        
-                        login_email_sent_key = f'login_email_sent_{user.id}'
-                        last_sent_time = request.session.get(login_email_sent_key, 0)
-                        current_time = time.time()
-                        
-                        # Only send email if more than 30 seconds have passed since last email
-                        if current_time - last_sent_time > 30:
-                            email_sent = send_login_notification_email(user, request)
-                            if email_sent:
-                                # Record the time we sent the email
-                                request.session[login_email_sent_key] = current_time
+                    if user.email and is_first_login:
+                        # Send email asynchronously (non-blocking)
+                        send_login_notification_email_async(user, request)
                     
                     # Mark first login as completed
                     if is_first_login:
@@ -270,11 +317,18 @@ def custom_logout(request):
     return response
 
 @login_required
-@customer_required
 def profile(request):
+    """Profile view accessible to all user types"""
+    # Determine user type
+    is_customer = request.user.user_type == 'customer'
+    is_staff = request.user.user_type == 'staff'
+    is_owner = request.user.user_type == 'owner' or request.user.is_superuser
+    
     context = {
         'user': request.user,
-        'is_customer': True
+        'is_customer': is_customer,
+        'is_staff': is_staff,
+        'is_owner': is_owner,
     }
     return render(request, 'users/profile.html', context)
 
@@ -294,3 +348,142 @@ def user_orders(request):
         'is_paginated': paginator.num_pages > 1
     }
     return render(request, 'users/orders.html', context)
+
+
+# Password Reset Views
+
+@csrf_protect
+def password_reset_request(request):
+    """Handle password reset request"""
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip()
+        
+        if not email:
+            return render(request, 'users/password_reset.html', {
+                'error': 'Please enter your email address.'
+            })
+        
+        # Find user by email
+        try:
+            user = CustomUser.objects.get(email=email)
+        except CustomUser.DoesNotExist:
+            # Don't reveal if email exists or not (security)
+            return redirect('users:password_reset_done')
+        
+        # Generate token and uid
+        token = default_token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        
+        # Build reset link
+        reset_link = request.build_absolute_uri(
+            f'/users/password-reset-confirm/{uid}/{token}/'
+        )
+        
+        # Send email asynchronously
+        def send_reset_email():
+            try:
+                context = {
+                    'user': user,
+                    'customer_name': user.get_full_name() or user.username,
+                    'reset_link': reset_link,
+                    'bakery_name': 'Live Bakery',
+                    'valid_hours': 24,
+                }
+                
+                send_template_email(
+                    to_email=user.email,
+                    subject='Password Reset Request - Live Bakery',
+                    template_name='emails/password_reset',
+                    context=context,
+                    fail_silently=True
+                )
+                logger.info(f"Password reset email sent to {user.email}")
+            except Exception as e:
+                logger.error(f"Error sending password reset email: {e}")
+        
+        # Send email in background thread
+        email_thread = threading.Thread(target=send_reset_email)
+        email_thread.daemon = True
+        email_thread.start()
+        
+        return redirect('users:password_reset_done')
+    
+    return render(request, 'users/password_reset.html')
+
+
+def password_reset_done(request):
+    """Show confirmation that reset email was sent"""
+    return render(request, 'users/password_reset_done.html')
+
+
+@csrf_protect
+def password_reset_confirm(request, uidb64, token):
+    """Handle password reset confirmation with new password"""
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = CustomUser.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
+        user = None
+    
+    # Verify token
+    if user is not None and default_token_generator.check_token(user, token):
+        if request.method == 'POST':
+            password1 = request.POST.get('password1')
+            password2 = request.POST.get('password2')
+            
+            # Validate passwords
+            if not password1 or not password2:
+                return render(request, 'users/password_reset_confirm.html', {
+                    'validlink': True,
+                    'error': 'Please enter both password fields.',
+                    'uidb64': uidb64,
+                    'token': token,
+                })
+            
+            if password1 != password2:
+                return render(request, 'users/password_reset_confirm.html', {
+                    'validlink': True,
+                    'error': 'Passwords do not match.',
+                    'uidb64': uidb64,
+                    'token': token,
+                })
+            
+            if len(password1) < 8:
+                return render(request, 'users/password_reset_confirm.html', {
+                    'validlink': True,
+                    'error': 'Password must be at least 8 characters long.',
+                    'uidb64': uidb64,
+                    'token': token,
+                })
+            
+            # Set new password
+            user.set_password(password1)
+            user.save()
+            
+            # Log the user out of all sessions for security
+            from django.contrib.sessions.models import Session
+            for session in Session.objects.all():
+                session_data = session.get_decoded()
+                if session_data.get('_auth_user_id') == str(user.id):
+                    session.delete()
+            
+            logger.info(f"Password reset successful for user {user.username}")
+            
+            return redirect('users:password_reset_complete')
+        
+        # GET request - show password reset form
+        return render(request, 'users/password_reset_confirm.html', {
+            'validlink': True,
+            'uidb64': uidb64,
+            'token': token,
+        })
+    else:
+        # Invalid token
+        return render(request, 'users/password_reset_confirm.html', {
+            'validlink': False,
+        })
+
+
+def password_reset_complete(request):
+    """Show confirmation that password was reset successfully"""
+    return render(request, 'users/password_reset_complete.html')
