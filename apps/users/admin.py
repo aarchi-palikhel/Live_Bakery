@@ -288,7 +288,10 @@ class CustomerAdmin(ModelAdmin):
         }),
     )
     
-    readonly_fields = ['last_login', 'date_joined']
+    # Make ALL fields read-only
+    readonly_fields = ['username', 'password', 'first_name', 'last_name', 'email', 
+                      'mobile_no', 'delivery_address', 'is_active', 'groups', 
+                      'user_permissions', 'last_login', 'date_joined']
     
     # ========== PERMISSION METHODS ==========
     
@@ -301,44 +304,54 @@ class CustomerAdmin(ModelAdmin):
         return request.user.is_staff
     
     def has_add_permission(self, request):
-        """Only owners can add customers"""
-        return is_owner_user(request)
+        """Nobody can add customers through admin (they register themselves)"""
+        return False
     
     def has_change_permission(self, request, obj=None):
-        """Staff cannot edit customers"""
-        if is_staff_user(request):
-            return False
-        return request.user.is_staff
+        """Nobody can edit customers (read-only)"""
+        return False
     
     def has_delete_permission(self, request, obj=None):
-        """Only owners can delete customers"""
-        return is_owner_user(request)
+        """Nobody can delete customers"""
+        return False
     
     # ========== QUERYSET RESTRICTIONS ==========
     
     def get_queryset(self, request):
         """
-        Staff can only see customers.
+        Both staff and owners can see all customers.
         """
         qs = super().get_queryset(request)
-        
-        if is_staff_user(request):
-            return qs.filter(user_type='customer')
-        
-        return qs
+        return qs.filter(user_type='customer')
     
     # ========== ADMIN VIEW CUSTOMIZATIONS ==========
     
     def change_view(self, request, object_id, form_url='', extra_context=None):
         """
-        Staff cannot access customer edit pages.
+        Allow viewing but show message that editing is disabled.
         """
-        if is_staff_user(request):
-            from django.contrib import messages
-            messages.error(request, "You don't have permission to edit customers.")
-            from django.shortcuts import redirect
-            return redirect('admin:users_customer_changelist')
+        extra_context = extra_context or {}
+        extra_context['show_save'] = False
+        extra_context['show_save_and_continue'] = False
+        extra_context['show_save_and_add_another'] = False
+        extra_context['show_delete'] = False
+        
+        # Add custom message
+        from django.contrib import messages
+        messages.info(request, "Customer details are read-only. Customers can only edit their own information through their profile page.")
+        
         return super().change_view(request, object_id, form_url, extra_context)
+    
+    def changelist_view(self, request, extra_context=None):
+        """
+        Add message to list view.
+        """
+        extra_context = extra_context or {}
+        from django.contrib import messages
+        if not request.GET.get('_changelist_filters'):  # Only show once
+            messages.info(request, "Customer accounts are view-only. Customers manage their own information.")
+        
+        return super().changelist_view(request, extra_context)
 
 # ==================== STAFF ADMIN ====================
 @admin.register(Staff)
