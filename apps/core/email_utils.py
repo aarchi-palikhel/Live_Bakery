@@ -157,11 +157,21 @@ def send_order_confirmation_email(order):
         logger.warning(f"Cannot send order confirmation for order {order.id}: No user email")
         return False
     
+    # Build order URL (assuming you have a domain configured)
+    from django.conf import settings
+    from django.urls import reverse
+    
+    # Get the domain from settings or use a default
+    domain = getattr(settings, 'SITE_DOMAIN', 'http://localhost:8000')
+    order_path = reverse('orders:order_detail', kwargs={'order_id': order.id})
+    order_url = f"{domain}{order_path}"
+    
     context = {
         'order': order,
         'customer_name': order.user.get_full_name() or order.user.username,
         'bakery_name': 'Live Bakery',
         'bakery_location': 'Kamalbinayak, Bhaktapur',
+        'order_url': order_url,
     }
     
     subject = f"Order Confirmation #{order.order_number} - Live Bakery"

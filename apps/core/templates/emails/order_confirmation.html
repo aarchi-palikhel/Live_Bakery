@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation - {{ bakery_name }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #d97706;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+        .content {
+            background-color: #f9f9f9;
+            padding: 30px;
+            border-radius: 0 0 8px 8px;
+        }
+        .confirmation-box {
+            background-color: #e8f5e8;
+            border-left: 4px solid #4caf50;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .order-details {
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .order-items {
+            margin: 15px 0;
+        }
+        .order-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .order-item:last-child {
+            border-bottom: none;
+        }
+        .total-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #ddd;
+            font-weight: bold;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #d97706;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .info-row {
+            margin: 8px 0;
+            padding: 8px 0;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ bakery_name }}</h1>
+        <h2>Order Confirmation</h2>
+    </div>
+    
+    <div class="content">
+        <p>Hello {{ customer_name }},</p>
+        
+        <div class="confirmation-box">
+            <h3>✅ Thank you for your order!</h3>
+            <p>We've received your order and will start preparing it soon.</p>
+        </div>
+        
+        <div class="order-details">
+            <h3>Order Details</h3>
+            
+            <div class="info-row">
+                <span class="info-label">Order Number:</span> #{{ order.order_number }}
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">Order Date:</span> {{ order.created_at|date:"F d, Y" }} at {{ order.created_at|time:"g:i A" }}
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">Status:</span> {{ order.get_status_display }}
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">Payment Method:</span> {{ order.get_payment_method_display }}
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">Delivery Type:</span> {{ order.get_delivery_type_display }}
+            </div>
+            
+            {% if order.delivery_type == 'delivery' %}
+            <div class="info-row">
+                <span class="info-label">Delivery Address:</span><br>
+                {{ order.delivery_address }}
+            </div>
+            {% else %}
+            <div class="info-row">
+                <span class="info-label">Pickup Location:</span><br>
+                {{ bakery_name }}, {{ bakery_location }}
+            </div>
+            {% endif %}
+            
+            <div class="info-row">
+                <span class="info-label">Contact Phone:</span> {{ order.phone_number }}
+            </div>
+            
+            {% if order.special_instructions %}
+            <div class="info-row">
+                <span class="info-label">Special Instructions:</span><br>
+                {{ order.special_instructions }}
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="order-details">
+            <h3>Order Items</h3>
+            <div class="order-items">
+                {% for item in order.items.all %}
+                <div class="order-item">
+                    <strong>{{ item.product.name }}</strong>
+                    {% if item.is_cake %}
+                    <span style="color: #d97706;">🎂</span>
+                    {% endif %}
+                    <br>
+                    <span style="color: #666;">Quantity: {{ item.quantity }} × Rs. {{ item.price }}</span>
+                    
+                    {% if item.is_cake %}
+                        {% if item.message_on_cake %}
+                        <br>
+                        <span style="color: #666; font-style: italic;">Message: "{{ item.message_on_cake }}"</span>
+                        {% endif %}
+                        
+                        {% if item.cake_weight %}
+                        <br>
+                        <span style="color: #666;">Weight: {{ item.display_weight }}</span>
+                        {% endif %}
+                        
+                        {% if item.cake_tiers %}
+                        <br>
+                        <span style="color: #666;">Tiers: {{ item.cake_tiers }}</span>
+                        {% endif %}
+                        
+                        {% if item.delivery_date %}
+                        <br>
+                        <span style="color: #666;">Delivery Date: {{ item.delivery_date|date:"F d, Y" }}</span>
+                        {% endif %}
+                    {% endif %}
+                    
+                    <div style="text-align: right; margin-top: 5px;">
+                        <strong>Rs. {{ item.total_price }}</strong>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="total-section">
+                <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                    <span>Subtotal:</span>
+                    <span>Rs. {{ order.subtotal }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                    <span>Delivery Fee:</span>
+                    <span>Rs. {{ order.delivery_fee }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin: 10px 0; font-size: 18px; color: #d97706;">
+                    <span>Total Amount:</span>
+                    <span>Rs. {{ order.total_amount }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{{ order_url }}" class="button">View Order Details</a>
+        </div>
+        
+        <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px;">
+            <strong>📋 What's Next?</strong>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+                <li>We'll send you updates as your order progresses</li>
+                <li>You'll receive notifications when your order is ready</li>
+                {% if order.delivery_type == 'pickup' %}
+                <li>Please bring your order number when picking up</li>
+                {% endif %}
+            </ul>
+        </div>
+        
+        <p>If you have any questions about your order, please don't hesitate to contact us.</p>
+        
+        <div class="footer">
+            <p><strong>{{ bakery_name }}</strong></p>
+            <p>{{ bakery_location }}</p>
+            <p>Phone: +977 9811223344</p>
+            <p style="margin-top: 15px; font-size: 12px; color: #999;">
+                This is an automated email. Please do not reply directly to this message.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

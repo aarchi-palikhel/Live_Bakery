@@ -23,10 +23,22 @@ def store_old_status(sender, instance, **kwargs):
 @receiver(post_save, sender=Order)
 def send_status_update_email(sender, instance, created, **kwargs):
     """
-    Send email notification when order status changes
+    Send email notification when order is created or status changes
     """
     if created:
-        # Don't send email for newly created orders (they start as 'pending')
+        # Send order confirmation email for newly created orders
+        logger.info(f"New order {instance.id} created, sending confirmation email")
+        
+        try:
+            from apps.core.email_utils import send_order_confirmation_email
+            email_sent = send_order_confirmation_email(instance)
+            if email_sent:
+                logger.info(f"Order confirmation email sent for order {instance.id} to {instance.user.email}")
+            else:
+                logger.warning(f"Failed to send order confirmation email for order {instance.id}")
+        except Exception as e:
+            logger.error(f"Error sending order confirmation email for order {instance.id}: {e}")
+        
         return
     
     # Get old status from cache
