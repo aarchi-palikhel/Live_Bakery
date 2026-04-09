@@ -1,10 +1,10 @@
-# Live Bakery 🍰
+# Online Order Management System for Bakeries 
 
 A full-stack web application for an online bakery management and ordering system built with Python, HTML, JavaScript, and CSS.
 
 ## 📋 Overview
 
-Live Bakery is a comprehensive platform designed to streamline bakery operations and provide customers with an intuitive interface for browsing, ordering, and managing bakery products online.
+Online Order Management System for Bakeries is a comprehensive platform designed to streamline bakery operations and provide customers with an intuitive interface for browsing, ordering, and managing bakery products online.
 
 ## 🛠️ Tech Stack
 
@@ -40,7 +40,7 @@ Live Bakery is a comprehensive platform designed to streamline bakery operations
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/aarchi-palikhel/Live_Bakery.git
+git clone https://github.com/aarchi-palikhel/Online-Order-Management-System-for-Bakeries.git
 cd Live_Bakery
 ```
 
@@ -94,13 +94,13 @@ Live_Bakery/
 
 - **GitHub:** [@aarchi-palikhel](https://github.com/aarchi-palikhel)
 
-## �� Contributing
+## Contributing
 
 Contributions are welcome! Feel free to submit issues or pull requests to help improve the project.
 
 ## 💬 Support
 
-For questions or support, please open an issue on the [GitHub repository](https://github.com/aarchi-palikhel/Live_Bakery/issues).
+For questions or support, please open an issue on the [GitHub repository](https://github.com/aarchi-palikhel/Online-Order-Management-System-for-Bakeries/issues).
 
 ## 📚 Additional Resources
 
